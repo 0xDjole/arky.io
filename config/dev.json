@@ -1,0 +1,7 @@
+{
+	"environment": "dev",
+	"apiUrl": "http://localhost:8000",
+	"storageUrl": "https://storage.arky.io/dev",
+	"siteUrl": "http://localhost:4322",
+	"businessId": "4429b3d1-e12f-43d4-8232-62da8ae3da85"
+}

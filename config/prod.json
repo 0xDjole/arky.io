@@ -1,0 +1,7 @@
+{
+	"environment": "prod",
+	"apiUrl": "https://api.arky.io",
+	"storageUrl": "https://storage.arky.io/prod",
+	"siteUrl": "https://arky.io",
+	"businessId": "4429b3d1-e12f-43d4-8232-62da8ae3da85"
+}

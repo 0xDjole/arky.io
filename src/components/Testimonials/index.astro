@@ -1,0 +1,84 @@
+---
+/**
+ * * Testimonials section columns (not swiper)
+ */
+
+// components
+import { getLocale } from "@lib/i18n";
+import TestimonialCard from "./TestimonialCard.astro";
+
+import { arky, getBlockObjectValues } from "@lib/index";
+
+const websiteCollection = await arky.cms.getCollection({ id: "website" });
+
+const currLocale = getLocale(Astro.currentLocale);
+const testimonialData = getBlockObjectValues(websiteCollection, "testimonials", currLocale);
+---
+
+<section id="testimonial" class="testimonial-pin-section relative h-screen overflow-hidden">
+	<div class="sticky top-0 flex h-screen flex-col justify-center">
+		<div class="flex justify-center">
+			<p class="colored-title gsap-fade-up inline text-5xl md:text-6xl font-bold">Testimonials</p>
+		</div>
+		<h2 class="testimonial-heading text-5xl md:text-7xl font-bold gsap-fade-up mt-8 text-center" data-delay="0.2">
+			<span class="testimonial-split-text">Hear from our customers</span>
+		</h2>
+
+		<div class="mt-10 overflow-hidden">
+			<div class="testimonial-track flex gap-4 lg:gap-6">
+				{testimonialData.map((testimonialItem) => <TestimonialCard {...testimonialItem} />)}
+				<div class="cta flex min-w-[300px] flex-col items-center justify-center gap-4 p-8">
+					<div class="heart-emoji text-6xl">❤️</div>
+					<p class="join-text text-xl font-semibold">Join Us</p>
+				</div>
+			</div>
+		</div>
+	</div>
+</section>
+
+<script src="./index.ts"></script>
+
+<style>
+	@import "tailwindcss/theme" theme(reference);
+	@import "@/styles/tailwind-theme.css" theme(reference);
+
+	.testimonial-pin-section {
+		@apply relative h-screen overflow-hidden;
+	}
+
+	.colored-title {
+		@apply inline text-5xl font-bold md:text-6xl;
+	}
+
+	.testimonial-heading {
+		@apply text-5xl font-bold mt-8 text-center md:text-7xl;
+	}
+
+	.testimonial-track {
+		@apply flex gap-4 lg:gap-6;
+	}
+
+	.cta {
+		@apply flex flex-col items-center justify-center gap-4 p-8;
+		min-width: 300px;
+	}
+
+	.heart-emoji {
+		@apply text-6xl;
+	}
+
+	.join-text {
+		@apply text-xl font-semibold;
+	}
+
+	/* Mobile fixes - keep horizontal scroll but fix width */
+	@media (max-width: 768px) {
+		.testimonial-track > * {
+			@apply min-w-[280px];
+		}
+
+		.cta {
+			@apply min-w-[280px];
+		}
+	}
+</style>

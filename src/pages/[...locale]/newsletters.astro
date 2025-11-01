@@ -1,0 +1,41 @@
+---
+import BaseLayout from "@layouts/BaseLayout.astro";
+import NewsletterList from "@lib/Newsletter/NewsletterList.svelte";
+import { arky, getBlockFromArray } from "@lib/index";
+import { defaultLocale, locales } from "@lib/i18n";
+
+export function getStaticPaths() {
+	return locales.map((locale) => ({
+		params: {
+			locale: locale === defaultLocale ? undefined : locale,
+		},
+		props: { locale },
+	}));
+}
+
+const { locale = defaultLocale } = Astro.props;
+
+const websiteCollection = await arky.cms.getCollection({ id: "website" });
+
+const siteData = getBlockFromArray(websiteCollection, "info", locale);
+
+// Extract title string (handle multilingual objects)
+const siteTitle = typeof siteData.title === 'string' ? siteData.title : (siteData.title?.en || siteData.title?.[Object.keys(siteData.title || {})[0]] || 'Site');
+---
+
+<BaseLayout title={`Newsletters - ${siteTitle}`} description="Subscribe to our newsletters">
+	<div class="site-container py-12 md:py-24">
+		<div class="mx-auto max-w-4xl">
+			<div class="text-center mb-12">
+				<h1 class="text-3xl md:text-5xl font-bold mb-4">
+					Our Newsletters
+				</h1>
+				<p class="text-xl text-muted-foreground max-w-2xl mx-auto">
+					Stay updated with our latest content, insights, and exclusive offers. Choose from our curated newsletters.
+				</p>
+			</div>
+
+			<NewsletterList client:load />
+		</div>
+	</div>
+</BaseLayout>

@@ -1,0 +1,50 @@
+---
+import BaseLayout from "@layouts/BaseLayout.astro";
+import Hero from "@components/Hero/index.astro";
+import LogoCloud from "@components/LogoCloud/index.astro";
+import InteractiveShowcase from "@components/InteractiveShowcase/InteractiveShowcase.astro";
+import FeatureMoneySaving from "@components/FeatureMoneySaving/index.astro";
+import Workflow from "@components/Workflow/index.astro";
+import Testimonials from "@components/Testimonials/index.astro";
+import Pricing from "@components/Pricing/index.astro";
+import Faq from "@components/Faq/index.astro";
+import ContactForm from "@components/Forms/ContactForm.svelte";
+import { arky, getBlockFromArray } from "@lib/index";
+import { defaultLocale, locales } from "@lib/i18n";
+
+export function getStaticPaths() {
+	return locales.map((locale) => ({
+		params: {
+			locale: locale === defaultLocale ? undefined : locale,
+		},
+		props: { locale },
+	}));
+}
+
+const { locale = defaultLocale } = Astro.props;
+
+const websiteCollection = await arky.cms.getCollection({ id: "website" });
+
+const siteData = getBlockFromArray(websiteCollection, "info", locale);
+
+// Extract strings (handle multilingual objects)
+const siteTitle = typeof siteData.title === 'string' ? siteData.title : (siteData.title?.en || siteData.title?.[Object.keys(siteData.title || {})[0]] || 'Site');
+const siteDescription = typeof siteData.description === 'string' ? siteData.description : (siteData.description?.en || siteData.description?.[Object.keys(siteData.description || {})[0]] || '');
+---
+
+<BaseLayout title={siteTitle} description={siteDescription}>
+	<Hero />
+	<LogoCloud />
+	<InteractiveShowcase />
+	<FeatureMoneySaving />
+	<Workflow />
+	<Testimonials />
+	<Pricing />
+	<Faq />
+
+	<div class="mt-24 md:mt-36">
+		<div class="site-container flex justify-center">
+			<ContactForm client:load />
+		</div>
+	</div>
+</BaseLayout>

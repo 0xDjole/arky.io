@@ -1,0 +1,34 @@
+---
+import BaseLayout from "@layouts/BaseLayout.astro";
+import ProductsPage from "@lib/EShop/Products/index.svelte";
+import { arky, getBlockFromArray } from "@lib/index";
+import { defaultLocale, getLocale, locales } from "@lib/i18n";
+
+export function getStaticPaths() {
+	return locales.map((locale) => ({
+		params: {
+			locale: locale === defaultLocale ? undefined : locale,
+		},
+		props: { locale },
+	}));
+}
+
+const websiteCollection = await arky.cms.getCollection({ id: "website" });
+
+const currLocale = getLocale(Astro.currentLocale);
+const siteData = getBlockFromArray(websiteCollection, "info", currLocale);
+
+// Extract title string (handle multilingual objects)
+const siteTitle = typeof siteData.title === 'string' ? siteData.title : (siteData.title?.en || siteData.title?.[Object.keys(siteData.title || {})[0]] || 'Site');
+---
+
+<BaseLayout title={`Products - ${siteTitle}`} description="Browse our products">
+	<div class="container mx-auto px-4 pt-24 pb-8">
+		<div class="text-center">
+			<div class="inline-block px-4 py-2 bg-amber-100 text-amber-800 text-xs font-medium rounded-full">
+				Preview Products
+			</div>
+		</div>
+		<ProductsPage client:load />
+	</div>
+</BaseLayout>

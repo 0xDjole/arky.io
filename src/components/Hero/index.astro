@@ -1,0 +1,350 @@
+---
+import { Icon } from "astro-icon/components";
+import { arky, getBlockFromArray, getBlockObjectValues } from "@lib/index";
+import Button from "@components/Button/Button.astro";
+import { getLocale } from "@lib/i18n";
+
+const currLocale = getLocale(Astro.currentLocale);
+
+const websiteCollection = await arky.cms.getCollection({ id: "website" });
+
+const info = getBlockFromArray(websiteCollection, "info", currLocale);
+
+const heroTitle = info.heroTitle;
+const heroSubtitle = info.heroSubtitle;
+const heroImage = info.heroImage;
+---
+
+<section id="hero" class="hero-section">
+	<!-- Video Background -->
+	<div class="video-container">
+		<video id="hero-video" class="hero-video" autoplay muted loop playsinline>
+			<source
+				src="https://video-previews.elements.envatousercontent.com/8c47b340-06d5-4dad-a023-3950fc73f54e/watermarked_preview/watermarked_preview.mp4"
+				type="video/mp4"
+			/>
+		</video>
+		<div class="video-overlay"></div>
+	</div>
+
+	<!-- Floating Elements -->
+	<div class="floating-elements">
+		<div class="float-circle float-1"></div>
+		<div class="float-circle float-2"></div>
+		<div class="float-circle float-3"></div>
+	</div>
+
+	<!-- Main Content -->
+	<div class="hero-content">
+		<div class="hero-text-container">
+			<div class="hero-badge">
+				<span class="badge-text">All-in-One Platform</span>
+			</div>
+
+			<h1 class="hero-title">
+				<span class="title-line line-1">Build</span>
+				<span class="title-line line-2">Modern</span>
+				<span class="title-line line-3">Businesses</span>
+			</h1>
+
+			<p class="hero-subtitle">
+				<span class="subtitle-line">Headless CMS, E-commerce, Reservations,</span>
+				<span class="subtitle-line">Newsletter & Analytics - All in One Platform</span>
+			</p>
+
+			<div class="hero-cta">
+				<button class="cta-button">
+					<span class="cta-text">Get Started</span>
+					<div class="cta-arrow">
+						<Icon name="mdi:arrow-right" />
+					</div>
+				</button>
+			</div>
+		</div>
+
+		<!-- Stats Cards -->
+		<div class="stats-container">
+			<div class="stat-card card-1">
+				<div class="stat-number">5+</div>
+				<div class="stat-label">Modules</div>
+			</div>
+			<div class="stat-card card-2">
+				<div class="stat-number">Rust</div>
+				<div class="stat-label">Powered</div>
+			</div>
+			<div class="stat-card card-3">
+				<div class="stat-number">Open</div>
+				<div class="stat-label">Source</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Scroll Indicator -->
+	<div class="scroll-indicator">
+		<div class="scroll-line"></div>
+		<span class="scroll-text">Scroll to explore</span>
+	</div>
+</section>
+
+<style>
+	.hero-section {
+		position: relative;
+		height: 100vh;
+		width: 100%;
+		overflow: hidden;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.video-container {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		z-index: 1;
+	}
+
+	.hero-video {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		scale: 1.1;
+		opacity: 0;
+	}
+
+	.video-overlay {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		background: linear-gradient(135deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0.3) 100%);
+		z-index: 2;
+	}
+
+	.floating-elements {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		z-index: 3;
+		pointer-events: none;
+	}
+
+	.float-circle {
+		position: absolute;
+		border-radius: 50%;
+		background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(59, 130, 246, 0.1));
+		backdrop-filter: blur(10px);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+	}
+
+	.float-1 {
+		width: 200px;
+		height: 200px;
+		top: 20%;
+		left: 10%;
+		opacity: 0;
+	}
+
+	.float-2 {
+		width: 150px;
+		height: 150px;
+		top: 60%;
+		right: 15%;
+		opacity: 0;
+	}
+
+	.float-3 {
+		width: 100px;
+		height: 100px;
+		bottom: 20%;
+		left: 20%;
+		opacity: 0;
+	}
+
+	.hero-content {
+		position: relative;
+		z-index: 4;
+		text-align: center;
+		color: white;
+		max-width: 1200px;
+		padding: 0 2rem;
+	}
+
+	.hero-text-container {
+		margin-bottom: 4rem;
+	}
+
+	.hero-badge {
+		display: inline-block;
+		margin-bottom: 2rem;
+		opacity: 0;
+		transform: translateY(30px);
+	}
+
+	.badge-text {
+		padding: 0.5rem 1.5rem;
+		background: rgba(255, 255, 255, 0.1);
+		border: 1px solid rgba(255, 255, 255, 0.2);
+		border-radius: 50px;
+		font-size: 0.875rem;
+		font-weight: 500;
+		letter-spacing: 0.5px;
+		text-transform: uppercase;
+		backdrop-filter: blur(10px);
+	}
+
+	.hero-title {
+		font-size: clamp(3rem, 8vw, 8rem);
+		font-weight: 900;
+		line-height: 0.9;
+		margin-bottom: 2rem;
+		text-transform: uppercase;
+		letter-spacing: -0.02em;
+	}
+
+	.title-line {
+		display: block;
+		opacity: 0;
+		transform: translateY(100px) rotateX(-90deg);
+		transform-origin: center bottom;
+	}
+
+	.line-2 {
+		background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+		-webkit-background-clip: text;
+		background-clip: text;
+		-webkit-text-fill-color: transparent;
+	}
+
+	.hero-subtitle {
+		font-size: clamp(1.125rem, 2vw, 1.5rem);
+		line-height: 1.6;
+		margin-bottom: 3rem;
+		opacity: 0.9;
+	}
+
+	.subtitle-line {
+		display: block;
+		opacity: 0;
+		transform: translateY(50px);
+	}
+
+	.hero-cta {
+		margin-bottom: 2rem;
+		opacity: 0;
+		transform: translateY(50px);
+	}
+
+	.cta-button {
+		display: inline-flex;
+		align-items: center;
+		gap: 1rem;
+		padding: 1rem 2rem;
+		background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+		border: none;
+		border-radius: 50px;
+		color: white;
+		font-size: 1.125rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 0.3s ease;
+		transform: scale(1);
+	}
+
+	.cta-button:hover {
+		transform: scale(1.05);
+		box-shadow: 0 20px 40px rgba(139, 92, 246, 0.3);
+	}
+
+	.cta-arrow {
+		transition: transform 0.3s ease;
+	}
+
+	.cta-button:hover .cta-arrow {
+		transform: translateX(5px);
+	}
+
+	.stats-container {
+		display: flex;
+		justify-content: center;
+		gap: 2rem;
+		flex-wrap: wrap;
+	}
+
+	.stat-card {
+		padding: 1.5rem 2rem;
+		background: rgba(255, 255, 255, 0.05);
+		backdrop-filter: blur(10px);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		border-radius: 16px;
+		text-align: center;
+		opacity: 0;
+		transform: translateY(50px) scale(0.8);
+	}
+
+	.stat-number {
+		font-size: 2rem;
+		font-weight: 900;
+		color: #8b5cf6;
+		margin-bottom: 0.5rem;
+	}
+
+	.stat-label {
+		font-size: 0.875rem;
+		opacity: 0.8;
+		text-transform: uppercase;
+		letter-spacing: 1px;
+	}
+
+	.scroll-indicator {
+		position: absolute;
+		bottom: 2rem;
+		left: 50%;
+		transform: translateX(-50%);
+		z-index: 4;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.5rem;
+		opacity: 0;
+		color: rgba(255, 255, 255, 0.7);
+	}
+
+	.scroll-line {
+		width: 2px;
+		height: 30px;
+		background: linear-gradient(to bottom, #8b5cf6, transparent);
+		border-radius: 1px;
+	}
+
+	.scroll-text {
+		font-size: 0.75rem;
+		text-transform: uppercase;
+		letter-spacing: 1px;
+	}
+
+	@media (max-width: 768px) {
+		.stats-container {
+			gap: 1rem;
+		}
+
+		.stat-card {
+			padding: 1rem 1.5rem;
+		}
+
+		.hero-title {
+			margin-bottom: 1.5rem;
+		}
+
+		.hero-subtitle {
+			margin-bottom: 2rem;
+		}
+	}
+</style>
+
+<script src="./index.ts"></script>

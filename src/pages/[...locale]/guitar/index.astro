@@ -1,0 +1,772 @@
+---
+import MinimalLayout from "@layouts/MinimalLayout.astro";
+import { defaultLocale, locales } from "@lib/i18n";
+import "./guitar.css";
+import Background2 from "@assets/images/background2.jpg";
+import { Image } from "astro:assets";
+
+export function getStaticPaths() {
+	return locales.map((locale) => ({
+		params: {
+			locale: locale === defaultLocale ? undefined : locale,
+		},
+		props: { locale },
+	}));
+}
+
+const { locale = defaultLocale } = Astro.props;
+---
+
+<MinimalLayout title="Guitar" description="Guitar interactive experience">
+	<div class="cover-image"></div>
+
+	<div class="content-wrapper">
+		<header id="site-header">
+			<nav class="site-nav" role="navigation" aria-label="Main navigation">
+				<div class="nav-left">
+					<ul>
+						<li><a href="#" aria-label="Shop for guitar services">Shop</a></li>
+						<li><a href="#" aria-label="Read articles about guitar restoration">Articles</a></li>
+						<li><a href="#contact" aria-label="Contact us for guitar restoration">Contact</a></li>
+					</ul>
+				</div>
+
+				<div class="site-title" id="title">
+					<h1>Maximize</h1>
+				</div>
+
+				<div class="nav-right">
+					<div class="copy-right">
+						<p>&copy; 2025 All Rights Reserved</p>
+					</div>
+				</div>
+			</nav>
+		</header>
+
+		<main id="site-main">
+			<section class="discover" id="discover">
+				<div class="cont">
+					<div class="slide">
+						<h1 class="slide1">Discover</h1>
+					</div>
+
+					<div class="slide">
+						<h1 class="slide2">Latest Trend</h1>
+					</div>
+
+					<div class="slide">
+						<h1 class="slide3">Minimal</h1>
+					</div>
+
+					<div class="slide">
+						<h1 class="slide4">Effort</h1>
+					</div>
+				</div>
+			</section>
+			<section class="image-section" id="image-section">
+				<div class="cont">
+					<img
+						class="cover"
+						src={Background2.src}
+						alt="Expert guitar restoration workspace showing vintage instruments"
+						loading="eager"
+						width="1920"
+						height="1080"
+					/>
+				</div>
+				<h2 class="the-best">Expert Guitar Restoration</h2>
+			</section>
+
+			<section class="about-section" id="about">
+				<div class="container">
+					<div class="about-content">
+						<div class="about-text">
+							<h2 class="section-title" data-text="Our Story">Our Story</h2>
+							<div class="text-block">
+								<p class="reveal-text">
+									It started in a small garage in 1985. Our founder, a passionate guitarist and
+									craftsman, couldn't find anyone who truly understood the soul of his vintage
+									instruments.
+								</p>
+								<p class="reveal-text">
+									What began as fixing guitars for friends became a lifelong mission to preserve the
+									music that moves us all.
+								</p>
+								<p class="reveal-text">
+									Today, we're trusted by musicians worldwide to breathe new life into their most
+									cherished instruments.
+								</p>
+							</div>
+						</div>
+						<div class="about-stats">
+							<div class="stat-item">
+								<span class="stat-number" data-count="2000">0</span>
+								<span class="stat-label">Guitars Restored</span>
+							</div>
+							<div class="stat-item">
+								<span class="stat-number" data-count="38">0</span>
+								<span class="stat-label">Years Experience</span>
+							</div>
+							<div class="stat-item">
+								<span class="stat-number" data-count="500">0</span>
+								<span class="stat-label">Happy Musicians</span>
+							</div>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<section class="services-section" id="services">
+				<div class="container">
+					<h2 class="section-title" data-text="Our Services">Our Services</h2>
+					<div class="services-container">
+						<div class="services-grid">
+							<div
+								class="service-card"
+								tabindex="0"
+								role="article"
+								aria-label="Complete guitar restoration service"
+							>
+								<div class="service-icon" aria-hidden="true">
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										width="48"
+										height="48"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="2"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+									>
+										<path d="M3 7a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"
+										></path>
+										<path d="M13 8.5h8m-8 3h8m-8 3h8"></path>
+										<circle cx="9" cy="9" r="2"></circle>
+										<circle cx="8" cy="14" r="2"></circle>
+									</svg>
+								</div>
+								<h3>Complete Restoration</h3>
+								<p>
+									Full restoration of vintage and modern guitars, bringing them back to their
+									original glory.
+								</p>
+							</div>
+							<div
+								class="service-card"
+								tabindex="0"
+								role="article"
+								aria-label="Guitar setup and repair service"
+							>
+								<div class="service-icon" aria-hidden="true">
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										width="48"
+										height="48"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="2"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+									>
+										<path
+											d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"
+										></path>
+									</svg>
+								</div>
+								<h3>Setup & Repair</h3>
+								<p>
+									Professional setup, fret work, and electronic repairs to optimize your
+									instrument's performance.
+								</p>
+							</div>
+							<div
+								class="service-card"
+								tabindex="0"
+								role="article"
+								aria-label="Custom guitar finishing service"
+							>
+								<div class="service-icon" aria-hidden="true">
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										width="48"
+										height="48"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="2"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+									>
+										<path d="M21 3a1 1 0 0 0-1.24-.53L9 6.5V17l2.76-.92a1 1 0 0 1 1.24.53z"></path>
+										<path d="m3 9 6-2v10.5c0 .5-.5 1.5-2 1.5s-2-1-2-1.5c0-.5.5-1.5 2-1.5z"></path>
+									</svg>
+								</div>
+								<h3>Custom Finishes</h3>
+								<p>
+									Beautiful custom paint jobs and refinishing work that respects your guitar's
+									character.
+								</p>
+							</div>
+							<div
+								class="service-card"
+								tabindex="0"
+								role="article"
+								aria-label="Guitar electronics service"
+							>
+								<div class="service-icon" aria-hidden="true">
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										width="48"
+										height="48"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="2"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+									>
+										<polyline points="13 2 13 9 20 9"></polyline>
+										<path d="M13 3L19.4 8.5a2 2 0 0 1 0 2.8l-5.1 5.1a2 2 0 0 1-2.8 0L3 8"></path>
+										<path d="M7 21L21 7"></path>
+									</svg>
+								</div>
+								<h3>Electronics</h3>
+								<p>
+									Pickup installation, wiring, and electronic upgrades for modern functionality.
+								</p>
+							</div>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<section class="flying-images" id="flying-images">
+				<div class="flying-text">Gallery</div>
+
+				<div class="flying-container">
+					<div class="flying-image" data-delay="0">
+						<img src={Background2.src} alt="Guitar restoration work" loading="lazy" />
+					</div>
+					<div class="flying-image" data-delay="1">
+						<img src={Background2.src} alt="Guitar restoration work" loading="lazy" />
+					</div>
+					<div class="flying-image" data-delay="2">
+						<img src={Background2.src} alt="Guitar restoration work" loading="lazy" />
+					</div>
+					<div class="flying-image" data-delay="3">
+						<img src={Background2.src} alt="Guitar restoration work" loading="lazy" />
+					</div>
+					<div class="flying-image" data-delay="4">
+						<img src={Background2.src} alt="Guitar restoration work" loading="lazy" />
+					</div>
+					<div class="flying-image" data-delay="5">
+						<img src={Background2.src} alt="Guitar restoration work" loading="lazy" />
+					</div>
+				</div>
+			</section>
+		</main>
+	</div>
+</MinimalLayout>
+
+<section class="cta-section" id="contact">
+	<div class="cont">
+		<div class="cta-content">
+			<h2 class="cta-title">Ready to Restore Your Guitar?</h2>
+			<p class="cta-text">
+				Let's bring your instrument back to life with the care and expertise it deserves.
+			</p>
+			<a
+				href="/contact"
+				class="cta-button"
+				role="button"
+				aria-label="Get a quote for guitar restoration">Get A Quote</a
+			>
+		</div>
+	</div>
+
+	<script>
+		import { animations } from "../../../lib/animation.js";
+
+		function initWorkAnimations() {
+			const { gsap, ScrollTrigger, SplitText } = animations();
+
+			// Check for reduced motion preference
+			const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+			if (prefersReducedMotion) {
+				return;
+			}
+
+			// Cinematic easing system
+			const cinematicEase = "power2.out";
+			const smoothEase = "power1.inOut";
+
+			gsap.defaults({ ease: cinematicEase });
+
+			// Screen size detection
+			const isSmallScreen = window.innerWidth < 768;
+			const isVerySmall = window.innerWidth < 480;
+
+			// ===== HERO TITLE - MAXIMIZE TRANSFORMATION =====
+			if (!isVerySmall) {
+				gsap.fromTo(
+					"#title",
+					{
+						scale: isSmallScreen ? 3 : 5,
+						y: isSmallScreen ? -100 : -200,
+						opacity: 0.2,
+					},
+					{
+						y: 0,
+						scale: 1,
+						opacity: 1,
+						duration: isSmallScreen ? 1 : 1.5,
+						ease: cinematicEase,
+						scrollTrigger: {
+							trigger: "#title",
+							start: "top 90%",
+							end: isSmallScreen ? "bottom 50%" : "bottom top",
+							scrub: 1,
+						},
+					},
+				);
+			}
+
+			// ===== DISCOVER SECTION - LAYERED STORY =====
+			if (isSmallScreen) {
+				gsap.fromTo(
+					".slide h1",
+					{
+						opacity: 0,
+						y: 50,
+						scale: 0.9,
+					},
+					{
+						opacity: 1,
+						y: 0,
+						scale: 1,
+						duration: 1,
+						stagger: 0.2,
+						ease: cinematicEase,
+						scrollTrigger: {
+							trigger: ".discover",
+							start: "top 80%",
+						},
+					},
+				);
+			} else {
+				const discoverTl = gsap.timeline({
+					scrollTrigger: {
+						trigger: ".discover",
+						start: "top top",
+						end: "bottom top",
+						scrub: 1,
+						pin: true,
+					},
+				});
+
+				discoverTl
+					.to(".slide1", {
+						y: 150,
+						rotation: -2,
+						scale: 1.05,
+					})
+					.to(
+						".slide2",
+						{
+							y: 180,
+							rotation: 1,
+							scale: 1.1,
+						},
+						"-=0.5",
+					)
+					.to(
+						".slide3",
+						{
+							y: 220,
+							rotation: -1,
+							scale: 1.15,
+						},
+						"-=0.5",
+					)
+					.to(
+						".slide4",
+						{
+							y: 280,
+							rotation: 3,
+							scale: 1.2,
+						},
+						"-=0.5",
+					);
+			}
+
+			// ===== HERO IMAGE - CLEAN CIRCLE REVEAL =====
+			if (isSmallScreen) {
+				gsap.fromTo(
+					".the-best",
+					{
+						opacity: 0,
+						y: 30,
+					},
+					{
+						opacity: 1,
+						y: 0,
+						duration: 1.2,
+						ease: cinematicEase,
+						scrollTrigger: {
+							trigger: "#image-section",
+							start: "top 70%",
+						},
+					},
+				);
+			} else {
+				const imageTl = gsap.timeline({
+					scrollTrigger: {
+						trigger: "#image-section",
+						start: "top top",
+						end: "bottom top",
+						scrub: 1,
+						pin: true,
+					},
+				});
+
+				// Clean circle reveal
+				imageTl.fromTo(
+					".cover",
+					{
+						clipPath: "circle(20% at 50% 50%)",
+					},
+					{
+						clipPath: "circle(100% at 50% 50%)",
+						duration: 1,
+						ease: smoothEase,
+					},
+				);
+
+				// Text reveal with split characters
+				const splitText = new SplitText(".the-best", { type: "chars" });
+				gsap.set(splitText.chars, {
+					opacity: 0,
+					y: 50,
+				});
+
+				imageTl.to(
+					splitText.chars,
+					{
+						opacity: 1,
+						y: 0,
+						duration: 1,
+						stagger: 0.02,
+						ease: cinematicEase,
+					},
+					0.3,
+				);
+			}
+
+			// ===== ABOUT SECTION - HERITAGE STORY =====
+			if (isSmallScreen) {
+				gsap.fromTo(
+					".about-section .section-title",
+					{
+						opacity: 0,
+						y: 40,
+					},
+					{
+						opacity: 1,
+						y: 0,
+						duration: 1,
+						ease: cinematicEase,
+						scrollTrigger: { trigger: ".about-section", start: "top 80%" },
+					},
+				);
+
+				gsap.fromTo(
+					".reveal-text",
+					{
+						opacity: 0,
+						y: 20,
+					},
+					{
+						opacity: 1,
+						y: 0,
+						duration: 0.8,
+						stagger: 0.2,
+						ease: cinematicEase,
+						scrollTrigger: { trigger: ".text-block", start: "top 80%" },
+					},
+				);
+
+				gsap.fromTo(
+					".stat-item",
+					{
+						opacity: 0,
+						scale: 0.8,
+					},
+					{
+						opacity: 1,
+						scale: 1,
+						duration: 0.8,
+						stagger: 0.1,
+						ease: "back.out(1.7)",
+						scrollTrigger: { trigger: ".about-stats", start: "top 80%" },
+					},
+				);
+
+				// Counter animation
+				const counters = document.querySelectorAll(".stat-number");
+				counters.forEach((counter, index) => {
+					const target = parseInt(counter.getAttribute("data-count"));
+					gsap.to(counter, {
+						textContent: target,
+						duration: 1.5,
+						ease: smoothEase,
+						snap: { textContent: 1 },
+						delay: index * 0.2,
+						scrollTrigger: {
+							trigger: counter,
+							start: "top 80%",
+						},
+					});
+				});
+			} else {
+				const aboutTl = gsap.timeline({
+					scrollTrigger: {
+						trigger: ".about-section",
+						start: "top top",
+						end: "+=300%",
+						pin: true,
+						scrub: 1,
+					},
+				});
+
+				aboutTl
+					.to(".about-section .section-title", {
+						opacity: 1,
+						y: 0,
+						duration: 0.5,
+					})
+					.to(
+						".reveal-text",
+						{
+							opacity: 1,
+							y: 0,
+							duration: 1,
+							stagger: 0.1,
+						},
+						"+=0.3",
+					)
+					.to(
+						".stat-item",
+						{
+							opacity: 1,
+							scale: 1,
+							duration: 0.8,
+							stagger: 0.1,
+							ease: "back.out(1.7)",
+						},
+						"+=0.2",
+					);
+
+				// Counter animation
+				const counters = document.querySelectorAll(".stat-number");
+				counters.forEach((counter, index) => {
+					const target = parseInt(counter.getAttribute("data-count"));
+					gsap.to(counter, {
+						textContent: target,
+						duration: 2,
+						ease: smoothEase,
+						snap: { textContent: 1 },
+						delay: index * 0.1,
+					});
+				});
+			}
+
+			// ===== SERVICES - COMPLETE HORIZONTAL SLIDE =====
+			if (isSmallScreen) {
+				gsap.fromTo(
+					".services-section .section-title",
+					{
+						opacity: 0,
+						y: 40,
+					},
+					{
+						opacity: 1,
+						y: 0,
+						duration: 1,
+						ease: cinematicEase,
+						scrollTrigger: { trigger: ".services-section", start: "top 80%" },
+					},
+				);
+
+				gsap.fromTo(
+					".service-card",
+					{
+						opacity: 0,
+						x: 50,
+					},
+					{
+						opacity: 1,
+						x: 0,
+						duration: 0.8,
+						stagger: 0.2,
+						ease: cinematicEase,
+						scrollTrigger: { trigger: ".services-grid", start: "top 80%" },
+					},
+				);
+			} else {
+				const servicesTl = gsap.timeline({
+					scrollTrigger: {
+						trigger: ".services-section",
+						start: "top top",
+						end: "+=400%",
+						pin: true,
+						scrub: 1,
+					},
+				});
+
+				servicesTl
+					.to(".services-section .section-title", {
+						opacity: 1,
+						y: 0,
+						duration: 0.3,
+					})
+					.to(
+						".services-grid",
+						{
+							x: "-300vw", // Slide completely across
+							duration: 8,
+							ease: "none",
+						},
+						"+=0.5",
+					);
+
+				// Activate cards as they come into view
+				[1, 2, 3, 4].forEach((cardNum, index) => {
+					servicesTl.to(
+						`.service-card:nth-child(${cardNum})`,
+						{
+							onStart: () => {
+								const card = document.querySelector(`.service-card:nth-child(${cardNum})`);
+								card?.classList.add("active");
+							},
+						},
+						`${1.5 + index * 1.5}`,
+					);
+				});
+			}
+
+			// ===== FLYING IMAGES - SLOWER CINEMATIC MOVEMENT =====
+			const flyingImages = gsap.utils.toArray(".flying-image");
+
+			flyingImages.forEach((image, index) => {
+				const delay = parseInt(image.getAttribute("data-delay")) || 0;
+
+				gsap.set(image, {
+					y: "150vh",
+					opacity: 0,
+					scale: 0.8,
+				});
+
+				const flyUpTl = gsap.timeline({
+					scrollTrigger: {
+						trigger: "#flying-images",
+						start: "top bottom",
+						end: "bottom top",
+						scrub: 0.2, // Much slower
+					},
+				});
+
+				flyUpTl
+					.to(image, {
+						opacity: 1,
+						scale: 1,
+						duration: 0.2,
+						ease: cinematicEase,
+						delay: delay * 0.1,
+					})
+					.to(
+						image,
+						{
+							y: "-150vh",
+							duration: 1,
+							ease: "none",
+						},
+						delay * 0.1,
+					)
+					.to(
+						image,
+						{
+							opacity: 0,
+							scale: 0.9,
+							duration: 0.1,
+						},
+						"-=0.1",
+					);
+
+				// Subtle horizontal drift on desktop
+				if (!isSmallScreen) {
+					gsap.to(image, {
+						x: gsap.utils.random(-20, 20),
+						duration: gsap.utils.random(8, 15),
+						ease: smoothEase,
+						yoyo: true,
+						repeat: -1,
+						delay: delay * 0.5,
+					});
+				}
+			});
+
+			// ===== CTA SECTION =====
+			gsap.fromTo(
+				[".cta-title", ".cta-text", ".cta-button"],
+				{
+					opacity: 0,
+					y: 40,
+				},
+				{
+					opacity: 1,
+					y: 0,
+					duration: 1,
+					stagger: 0.2,
+					ease: cinematicEase,
+					scrollTrigger: {
+						trigger: ".cta-section",
+						start: "top 80%",
+					},
+				},
+			);
+
+			// Gallery text
+			gsap.fromTo(
+				".flying-text",
+				{
+					opacity: 0,
+					y: -40,
+				},
+				{
+					opacity: 1,
+					y: 0,
+					duration: 1.5,
+					ease: cinematicEase,
+					scrollTrigger: {
+						trigger: "#flying-images",
+						start: "top 90%",
+					},
+				},
+			);
+
+			// Enhanced scroll refresh
+			let resizeTimer;
+			window.addEventListener("resize", () => {
+				clearTimeout(resizeTimer);
+				resizeTimer = setTimeout(() => {
+					ScrollTrigger.refresh();
+				}, 150);
+			});
+		}
+
+		document.addEventListener("DOMContentLoaded", initWorkAnimations);
+		document.addEventListener("astro:after-swap", initWorkAnimations);
+	</script>
+</section>

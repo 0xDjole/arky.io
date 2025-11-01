@@ -1,0 +1,47 @@
+---
+/**
+ * * FAQ section in accordions
+ */
+
+// components
+import {
+	Accordion,
+	AccordionContent,
+	AccordionItem,
+	AccordionTrigger,
+} from "@components/Accordion";
+import { getLocale } from "@lib/i18n";
+
+import { arky, getBlockObjectValues } from "@lib/index";
+
+const websiteCollection = await arky.cms.getCollection({ id: "website" });
+
+const currLocale = getLocale(Astro.currentLocale);
+const faqData = getBlockObjectValues(websiteCollection, "faq", currLocale);
+---
+
+<section id="faq" class="site-container my-24 md:my-36">
+	<div class="flex justify-center">
+		<p class="colored-title gsap-fade-up inline text-4xl font-bold md:text-5xl">FAQ</p>
+	</div>
+	<h2
+		class="faq-heading gsap-fade-up mt-8 text-center text-5xl font-bold md:text-6xl"
+		data-delay="0.2"
+	>
+		<span class="faq-split-text">Answers to all your questions</span>
+	</h2>
+	<div class="mx-auto mt-10 flex max-w-3xl flex-col gap-3">
+		<Accordion class="gsap-stagger space-y-3">
+			{
+				faqData.map((faqItem, idx) => (
+					<AccordionItem value={`item-${idx}`} class="gsap-stagger-item">
+						<AccordionTrigger>{faqItem.question}</AccordionTrigger>
+						<AccordionContent class="markdown-content" details={faqItem.answer} />
+					</AccordionItem>
+				))
+			}
+		</Accordion>
+	</div>
+</section>
+
+<script src="./faq.ts"></script>

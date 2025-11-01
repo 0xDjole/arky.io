@@ -1,0 +1,12 @@
+# Ignore artifacts:
+dist
+.astro
+
+# Ignore node_modules
+node_modules
+
+# Standard
+**/.git
+**/.svn
+**/.hg
+**/node_modules

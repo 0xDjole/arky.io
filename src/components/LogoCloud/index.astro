@@ -1,0 +1,114 @@
+---
+import { getLocale } from "@lib/i18n";
+import { arky, getBlockObjectValues } from "@lib/index";
+
+const currLocale = getLocale(Astro.currentLocale);
+
+const websiteCollection = await arky.cms.getCollection({ id: "website" });
+const logos = getBlockObjectValues(websiteCollection, "logos", currLocale);
+
+const logosWithSvg = await Promise.all(
+	logos.map(async (logo) => {
+		const svgContent = await arky.utils.getSvgContentForAstro(logo.svg);
+		return {
+			...logo,
+			svgContent,
+		};
+	}),
+);
+---
+
+<section id="logocloud" class="gsap-fade-up relative py-16 md:py-20">
+	<div class="relative mx-auto max-w-[1800px] overflow-hidden px-4">
+		<div class="fade-left"></div>
+		<div class="fade-right"></div>
+		<div class="logo-marquee relative flex gap-32 overflow-hidden">
+			<div class="animate-marquee2 flex min-w-full shrink-0 items-center justify-around gap-32">
+				{
+					logosWithSvg.map((logo) => (
+						<div
+							class="logo gsap-scale-in"
+							set:html={logo.svgContent}
+							aria-label={`${logo.name} logo`}
+						/>
+					))
+				}
+			</div>
+			<div
+				aria-hidden="true"
+				class="animate-marquee2 flex min-w-full shrink-0 items-center justify-around gap-32"
+			>
+				{
+					logosWithSvg.map((logo) => (
+						<div
+							class="logo gsap-scale-in"
+							set:html={logo.svgContent}
+							aria-label={`${logo.name} logo`}
+						/>
+					))
+				}
+			</div>
+		</div>
+	</div>
+</section>
+
+<style>
+	@import "tailwindcss/theme" theme(reference);
+	@import "@/styles/tailwind-theme.css" theme(reference);
+
+	.fade-left {
+		@apply absolute top-0 -left-px z-10 h-full w-[20%];
+		background: linear-gradient(to right, var(--bg-primary) 20%, transparent);
+	}
+
+	.fade-right {
+		@apply absolute top-0 -right-px z-10 h-full w-[20%];
+		background: linear-gradient(to right, transparent, var(--bg-primary) 80%);
+	}
+
+	.logo {
+		@apply flex h-10 items-center justify-center py-2;
+		color: var(--text-muted);
+	}
+
+	.logo :global(svg) {
+		height: 2.5rem;
+		width: auto;
+		fill: currentColor;
+		opacity: 0.7;
+		transition: all 0.3s ease;
+	}
+
+	.logo:hover :global(svg) {
+		opacity: 1;
+		fill: var(--color-primary-600);
+		transform: scale(1.1);
+	}
+
+	[data-theme="dark"] .logo :global(svg) {
+		opacity: 0.6;
+	}
+
+	[data-theme="dark"] .logo:hover :global(svg) {
+		fill: var(--color-primary-400);
+	}
+</style>
+
+<script>
+	document.addEventListener("DOMContentLoaded", () => {
+		const logoMarquee = document.querySelector(".logo-marquee");
+		if (!logoMarquee) return;
+
+		logoMarquee.addEventListener("mouseenter", () => {
+			document.querySelectorAll(".animate-marquee2").forEach((el) => {
+				el.style.animationPlayState = "paused";
+			});
+		});
+
+		logoMarquee.addEventListener("mouseleave", () => {
+			document.querySelectorAll(".animate-marquee2").forEach((el) => {
+				el.style.animationPlayState = "running";
+			});
+		});
+	});
+</script>

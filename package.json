@@ -1,0 +1,63 @@
+{
+	"name": "arky-website",
+	"type": "module",
+	"version": "6.1.1",
+	"scripts": {
+		"dev": "astro dev",
+		"start": "astro dev",
+		"build": "astro build",
+		"preview": "astro preview",
+		"astro": "astro",
+		"format": "prettier -w \"**/*\" --ignore-unknown --cache",
+		"lint": "eslint ."
+	},
+	"dependencies": {
+		"@astrojs/cloudflare": "^12.5.3",
+		"@astrojs/mdx": "^4.2.2",
+		"@astrojs/rss": "^4.0.11",
+		"@astrojs/sitemap": "^3.3.0",
+		"@astrojs/svelte": "^7.0.11",
+		"@fontsource-variable/inter": "^5.2.5",
+		"@fontsource/inter": "^5.2.5",
+		"@iconify-icons/mdi": "^1.2.48",
+		"@iconify-json/mdi": "^1.2.3",
+		"@iconify/json": "^2.2.330",
+		"@iconify/svelte": "^4.2.0",
+		"@nanostores/persistent": "^1.0.0",
+		"@stripe/stripe-js": "^5.2.2",
+		"@tailwindcss/forms": "^0.5.10",
+		"@tailwindcss/vite": "^4.0.17",
+		"animejs": "^3.2.2",
+		"arky-sdk": "^0.3.25",
+		"astro": "5.14.5",
+		"astro-auto-import": "^0.4.4",
+		"astro-icon": "1.1.5",
+		"astro-seo": "^0.8.4",
+		"gsap": "^3.13.0",
+		"lenis": "^1.1.19",
+		"lottie-web": "^5.13.0",
+		"nanostores": "^1.0.1",
+		"svelte": "^5.28.2",
+		"tailwindcss": "^4.0.17",
+		"tailwindcss-animate": "^1.0.7",
+		"ts-results-es": "^5.0.1",
+		"typescript": "^5.8.3"
+	},
+	"devDependencies": {
+		"@eslint/js": "^9.23.0",
+		"@playform/compress": "^0.1.8",
+		"eslint": "^9.23.0",
+		"eslint-plugin-astro": "^1.3.1",
+		"eslint-plugin-jsx-a11y": "^6.10.2",
+		"eslint-plugin-prettier": "^5.2.5",
+		"globals": "^16.0.0",
+		"lodash.debounce": "^4.0.8",
+		"lodash.throttle": "^4.1.1",
+		"prettier-plugin-astro": "^0.14.1",
+		"prettier-plugin-tailwindcss": "^0.6.11",
+		"typescript-eslint": "^8.28.0"
+	},
+	"overrides": {
+		"sharp": "^0.33.0"
+	}
+}

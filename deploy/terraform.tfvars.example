@@ -1,0 +1,11 @@
+# Terraform Variables Template for Arky.io
+# Copy this file to terraform.tfvars and fill in your actual values
+# NEVER commit terraform.tfvars to git - it contains sensitive credentials!
+
+ROOT_DOMAIN           = "arky.io"
+CLOUDFLARE_API_TOKEN  = "your-cloudflare-api-token-here"
+CLOUDFLARE_ACCOUNT_ID = "your-cloudflare-account-id-here"
+CLOUDFLARE_ZONE_ID    = "your-cloudflare-zone-id-for-arky.io"
+GITHUB_OWNER          = "0xDjole"
+GITHUB_REPO           = "arky.io"
+ARKY_TOKEN            = "your-arky-admin-token-here"

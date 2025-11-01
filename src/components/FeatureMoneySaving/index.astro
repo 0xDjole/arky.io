@@ -1,0 +1,58 @@
+---
+import Button from "@components/Button/Button.astro";
+---
+
+<section id="money-saving" class="relative overflow-hidden">
+	<div class="sticky top-0 flex min-h-screen items-center justify-center py-16 md:py-24">
+		<div class="site-container">
+			<div class="grid items-center gap-12 lg:grid-cols-2">
+				<div class="lottie-container order-2 lg:order-1">
+					<div id="money-lottie" class="w-full"></div>
+				</div>
+				<div class="money-content gsap-slide-right order-1 space-y-6 lg:order-2">
+					<h2
+						class="main-text-gradient feature-title text-4xl font-bold md:text-5xl"
+						data-delay="0.2"
+					>
+						Save Money with All-in-One Platform
+					</h2>
+					<div class="prose prose-lg text-secondary feature-content max-w-none" data-delay="0.4">
+						<p>
+							Consolidate all your digital needs into one powerful platform. No more juggling
+							multiple subscriptions, services, and tools. Our comprehensive solution saves you both
+							time and money.
+						</p>
+						<ul class="mt-4 space-y-3">
+							<li class="flex items-start">
+								<span class="text-primary mr-3">✓</span>
+								<span>Replace 5+ separate tools with one integrated solution</span>
+							</li>
+							<li class="flex items-start">
+								<span class="text-primary mr-3">✓</span>
+								<span>Save up to 70% on monthly subscription costs</span>
+							</li>
+							<li class="flex items-start">
+								<span class="text-primary mr-3">✓</span>
+								<span>Unified dashboard for all your digital operations</span>
+							</li>
+							<li class="flex items-start">
+								<span class="text-primary mr-3">✓</span>
+								<span>Seamless integration between all features</span>
+							</li>
+						</ul>
+					</div>
+					<div class="feature-buttons flex flex-wrap gap-4 pt-4">
+						<Button variant="primary" class="feature-btn-1 hover-lift px-6 py-3">
+							Calculate Your Savings
+						</Button>
+						<Button variant="outline" class="feature-btn-2 hover-lift px-6 py-3">
+							See Pricing
+						</Button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</section>
+
+<script src="./index.ts"></script>

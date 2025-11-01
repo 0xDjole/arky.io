@@ -1,0 +1,17 @@
+---
+import { arky, getBlockFromArray } from "@lib/index";
+import { getLocale } from "@lib/i18n";
+
+const websiteCollection = await arky.cms.getCollection({ id: "website" });
+
+const currLocale = getLocale(Astro.currentLocale);
+const siteData = getBlockFromArray(websiteCollection, "info", currLocale);
+---
+
+<footer class="w-full py-8 mt-16 border-t border-gray-200 dark:border-gray-800">
+	<div class="container mx-auto px-4 text-center">
+		<div class="text-sm text-gray-600 dark:text-gray-400">
+			{siteData.footerText}
+		</div>
+	</div>
+</footer>

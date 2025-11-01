@@ -1,0 +1,121 @@
+---
+import type { HTMLAttributes } from "astro/types";
+
+type Props = Omit<HTMLAttributes<"button">, "role" | "type" | "aria-checked"> & {
+	id: string;
+	label?: string;
+	checked?: boolean;
+	padding?: number;
+	variant?: "primary" | "secondary" | "default";
+};
+
+const {
+	id,
+	label,
+	checked = false,
+	padding = 4,
+	variant = "default",
+	class: className,
+	...rest
+} = Astro.props;
+
+let ariaLabel;
+if (rest["aria-label"]) {
+	ariaLabel = rest["aria-label"];
+	delete rest["aria-label"];
+} else if (label) {
+	ariaLabel = label;
+} else {
+	ariaLabel = "switch";
+}
+---
+
+<div class="starwind-switch flex items-center">
+	<button
+		type="button"
+		id={id}
+		role="switch"
+		aria-checked={checked ? "true" : "false"}
+		aria-label={ariaLabel}
+		class:list={[
+			"border-secondary bg-tertiary inline-flex items-center rounded-full border transition-all duration-200",
+			"group peer primary-focus",
+			"not-disabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-50",
+			{
+				"aria-checked:border-brand aria-checked:bg-brand": variant === "primary",
+				"aria-checked:border-accent aria-checked:bg-accent": variant === "secondary",
+				"aria-checked:border-primary aria-checked:bg-primary": variant === "default",
+			},
+			className,
+		]}
+		style={{
+			"--padding": `${padding}px`,
+			"--height": `calc(1.25rem + (var(--padding) * 2))`,
+			"--width": `calc(3rem + (var(--padding) * 2))`,
+			"--thumb-travel": `calc(3rem - 1.25rem)`,
+			height: "var(--height)",
+			width: "var(--width)",
+		}}
+		{...rest}
+	>
+		<span
+			class:list={[
+				"switch-thumb bg-primary inline-block h-5 w-5 transform rounded-full shadow-md transition-transform duration-200",
+			]}
+			style={{
+				margin: "var(--padding)",
+			}}></span>
+	</button>
+	{
+		label && (
+			<label
+				for={id}
+				class:list={[
+					"text-primary ml-3 text-sm font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-50",
+				]}
+			>
+				{label}
+			</label>
+		)
+	}
+</div>
+
+<style>
+	.starwind-switch button[aria-checked="false"] .switch-thumb {
+		transform: translateX(0);
+	}
+
+	.starwind-switch button[aria-checked="true"] .switch-thumb {
+		transform: translateX(var(--thumb-travel));
+	}
+</style>
+
+<script>
+	const setupSwitches = () => {
+		const switchButtons = document.querySelectorAll(
+			'.starwind-switch button[role="switch"]',
+		) as NodeListOf<HTMLButtonElement>;
+
+		switchButtons.forEach((switchButton) => {
+			switchButton.addEventListener("click", () => {
+				if (switchButton.disabled) return;
+
+				const isChecked = switchButton.getAttribute("aria-checked") === "true";
+				switchButton.setAttribute("aria-checked", (!isChecked).toString());
+			});
+
+			switchButton.addEventListener("keydown", (event) => {
+				if (switchButton.disabled) return;
+
+				if (event.key === " " || event.key === "Enter") {
+					event.preventDefault();
+					const isChecked = switchButton.getAttribute("aria-checked") === "true";
+					switchButton.setAttribute("aria-checked", (!isChecked).toString());
+				}
+			});
+		});
+	};
+
+	setupSwitches();
+	document.addEventListener("astro:after-swap", setupSwitches);
+</script>

@@ -1,0 +1,312 @@
+---
+import BaseLayout from "@layouts/BaseLayout.astro";
+import { defaultLocale, locales } from "@lib/i18n";
+
+export function getStaticPaths() {
+	return locales.map((locale) => ({
+		params: {
+			locale: locale === defaultLocale ? undefined : locale,
+		},
+		props: { locale },
+	}));
+}
+
+const { locale = defaultLocale } = Astro.props;
+---
+
+<BaseLayout
+	title="Lenis - Smooth Scrolling Library"
+	description="Explore smooth scrolling experiences"
+>
+	<section id="vertical">
+		<div class="container">
+			<div class="vertical__content">
+				<div class="col col_left">
+					<h2 class="vertical__heading">
+						<span>About</span><span>Smooth</span><span>Scroll</span>
+					</h2>
+				</div>
+				<div class="col col_right">
+					<div class="vertical__item">
+						<h3>Smooth Scroll Lenis</h3>
+						<p>
+							Lenis is an open-source library built to standardize scroll experiences and sauce up
+							websites with butter-smooth navigation, all while using the platform and keeping it
+							accessible.
+						</p>
+					</div>
+					<div class="vertical__item">
+						<h3>Smooth Scroll Lenis</h3>
+						<p>
+							Lenis is an open-source library built to standardize scroll experiences and sauce up
+							websites with butter-smooth navigation, all while using the platform and keeping it
+							accessible.
+						</p>
+					</div>
+					<div class="vertical__item">
+						<h3>Smooth Scroll Lenis</h3>
+						<p>
+							Lenis is an open-source library built to standardize scroll experiences and sauce up
+							websites with butter-smooth navigation, all while using the platform and keeping it
+							accessible.
+						</p>
+					</div>
+					<div class="vertical__item">
+						<h3>Smooth Scroll Lenis</h3>
+						<p>
+							Lenis is an open-source library built to standardize scroll experiences and sauce up
+							websites with butter-smooth navigation, all while using the platform and keeping it
+							accessible.
+						</p>
+					</div>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<section id="horizontal">
+		<div class="container">
+			<div class="horizontal__content">
+				<div class="horizontal__item">
+					<div class="horizontal__num">1</div>
+				</div>
+				<div class="horizontal__item">
+					<div class="horizontal__num">2</div>
+				</div>
+				<div class="horizontal__item">
+					<div class="horizontal__num">3</div>
+				</div>
+				<div class="horizontal__item">
+					<div class="horizontal__num">4</div>
+				</div>
+				<div class="horizontal__item">
+					<div class="horizontal__num">5</div>
+					<div class="hidden-section">
+						<div class="colorful-content">
+							<h2>Welcome Inside!</h2>
+							<p>This is the hidden colorful section revealed when zooming into the card</p>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</section>
+</BaseLayout>
+
+<style>
+	@import "tailwindcss/theme" theme(reference);
+	@import "@/styles/tailwind-theme.css" theme(reference);
+
+	html {
+		scroll-behavior: initial;
+		overflow: hidden;
+	}
+
+	html,
+	body {
+		@apply min-h-full w-full;
+	}
+
+	body {
+		@apply bg-black text-base font-normal text-white;
+		font-family: Slussen;
+	}
+
+	h2 {
+		@apply m-0 border-l-4 p-6 text-6xl leading-none font-black uppercase;
+		border-color: #ff98a2;
+	}
+
+	h2 span {
+		@apply block;
+	}
+
+	h3 {
+		@apply text-xl leading-none font-normal uppercase;
+		font-stretch: expanded;
+		color: #ff98a2;
+	}
+
+	h2,
+	h3,
+	h4 {
+		@apply uppercase;
+	}
+
+	.container {
+		@apply mx-auto w-[95%];
+	}
+
+	section {
+		@apply py-12;
+	}
+
+	.col {
+		@apply w-1/2;
+	}
+
+	#vertical {
+		@apply w-screen;
+		height: 200vh;
+	}
+
+	.vertical__content {
+		@apply flex items-start justify-center;
+	}
+
+	.vertical__content .col_left {
+		@apply h-full;
+	}
+
+	.vertical__content .col.col_right {
+		@apply w-2/5;
+	}
+
+	.vertical__item:not(:last-child) {
+		@apply mb-60;
+	}
+
+	#horizontal {
+		@apply py-24;
+	}
+
+	.horizontal__content {
+		@apply flex;
+	}
+
+	.horizontal__item {
+		@apply mr-12 border border-gray-100;
+		padding: 200px 150px;
+	}
+	.horizontal__item:not(:last-child) {
+		@apply mr-12;
+	}
+
+	.horizontal__num {
+		@apply text-8xl font-black;
+		font-stretch: condensed;
+		color: #ff98a2;
+	}
+
+	.hidden-section {
+		@apply absolute inset-0 opacity-0 pointer-events-none;
+		background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #ffeaa7);
+		background-size: 400% 400%;
+		animation: gradientShift 3s ease infinite;
+	}
+
+	.colorful-content {
+		@apply flex flex-col items-center justify-center h-full text-center p-8;
+	}
+
+	.colorful-content h2 {
+		@apply text-4xl font-bold text-white mb-4;
+		text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+	}
+
+	.colorful-content p {
+		@apply text-lg text-white;
+		text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+	}
+
+	@keyframes gradientShift {
+		0% { background-position: 0% 50%; }
+		50% { background-position: 100% 50%; }
+		100% { background-position: 0% 50%; }
+	}
+</style>
+
+<script>
+	import { animations } from "../../lib/animation.js";
+
+	function initWorkAnimations() {
+		const { gsap, ScrollTrigger } = animations();
+
+		// Vertical scroll animation
+		const section_1 = document.getElementById("vertical");
+		const col_left = document.querySelector(".col_left");
+		const timeln = gsap.timeline({ paused: true });
+
+		timeln.fromTo(
+			col_left,
+			{ y: 0 },
+			{ y: section_1?.scrollHeight - col_left.offsetHeight, duration: 1, ease: "none" },
+			0,
+		);
+
+		const scroll_1 = ScrollTrigger.create({
+			animation: timeln,
+			trigger: section_1,
+			start: "top top",
+			end: "bottom center",
+			scrub: true,
+		});
+
+		// Horizontal scroll animation with falling last card
+		const section_2 = document.getElementById("horizontal");
+		let box_items = gsap.utils.toArray(".horizontal__item");
+		const horizontalTimeline = gsap.timeline({ paused: true });
+
+		// Horizontal slide animation
+		horizontalTimeline.to(
+			box_items,
+			{
+				xPercent: -100 * (box_items.length - 1),
+				duration: 1,
+				ease: "none",
+			},
+			0,
+		);
+
+		// Last card falls and we go into it
+		const lastCard = box_items[box_items.length - 1]; // 5th card
+		
+		// First: last card falls slightly
+		horizontalTimeline.to(
+			lastCard,
+			{
+				y: "20vh",
+				rotation: -5,
+				duration: 0.2,
+				ease: "power2.out",
+			},
+			1,
+		);
+		
+		// Then: zoom into the last card massively to reveal hidden section
+		horizontalTimeline.to(
+			lastCard,
+			{
+				scale: 10,
+				zIndex: 10,
+				duration: 0.5,
+				ease: "power2.in",
+			},
+			1.2,
+		);
+
+		// Reveal the hidden colorful section
+		const hiddenSection = lastCard.querySelector('.hidden-section');
+		horizontalTimeline.to(
+			hiddenSection,
+			{
+				opacity: 1,
+				duration: 0.3,
+				ease: "power2.out",
+			},
+			1.3,
+		);
+
+		ScrollTrigger.create({
+			animation: horizontalTimeline,
+			trigger: section_2,
+			pin: true,
+			scrub: 3,
+			start: "top top",
+			end: "+=" + (section_2.offsetWidth + window.innerHeight),
+		});
+	}
+
+	document.addEventListener("DOMContentLoaded", initWorkAnimations);
+	document.addEventListener("astro:after-swap", initWorkAnimations);
+</script>

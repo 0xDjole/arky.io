@@ -1,0 +1,48 @@
+---
+import { type CollectionEntry } from "astro:content";
+import BaseHead from "@layouts/BaseHead.astro";
+import "@/styles/global.css";
+import { getLocale } from "@lib/i18n";
+
+interface Props {
+	type?: "blog" | "general";
+	title: string;
+	description: string;
+	heroImage?: ImageMetadata;
+	authorsData?: CollectionEntry<"authors">[];
+	postFrontmatter?: CollectionEntry<"blog">["data"];
+	noindex?: boolean;
+}
+
+const {
+	type = "general",
+	title,
+	description,
+	heroImage,
+	authorsData,
+	postFrontmatter,
+	noindex = false,
+} = Astro.props as Props;
+
+const currLocale = getLocale(Astro.currentLocale);
+---
+
+<!doctype html>
+<html lang={currLocale} class="minimal-layout" transition:animate="fade">
+	<head>
+		<BaseHead
+			type={type}
+			title={title}
+			description={description}
+			image={heroImage ? heroImage : undefined}
+			authors={authorsData ? authorsData : undefined}
+			postFrontmatter={postFrontmatter ? postFrontmatter : undefined}
+			noindex={noindex}
+		/>
+	</head>
+	<body id="body">
+		<main>
+			<slot />
+		</main>
+	</body>
+</html>

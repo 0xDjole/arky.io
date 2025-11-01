@@ -1,0 +1,200 @@
+---
+
+---
+
+<section class="workflow-section">
+	<div class="workflow-container">
+		<div class="workflow-content">
+			<div class="left-column">
+				<div class="workflow-header">
+					<h2 class="workflow-title">
+						<span class="main-text-gradient">Our</span>
+						<span class="main-text-gradient">Workflow</span>
+					</h2>
+					<div class="gear-container">
+						<div id="gear-lottie" class="gear-animation"></div>
+					</div>
+				</div>
+			</div>
+			<div class="right-column">
+				<div class="workflow-item">
+					<div class="step-number">01</div>
+					<h3 class="step-title">Discovery & Strategy</h3>
+					<p class="step-description">
+						We start by understanding your business goals, target audience, and market landscape.
+						Our strategic approach ensures every decision aligns with your objectives.
+					</p>
+					<ul class="step-features">
+						<li>Market research & analysis</li>
+						<li>Competitor benchmarking</li>
+						<li>User persona development</li>
+						<li>Technical requirements gathering</li>
+					</ul>
+				</div>
+				<div class="workflow-item">
+					<div class="step-number">02</div>
+					<h3 class="step-title">Design & Prototyping</h3>
+					<p class="step-description">
+						Creating stunning, user-centered designs that captivate your audience while maintaining
+						functionality and accessibility standards.
+					</p>
+					<ul class="step-features">
+						<li>Wireframing & user flow mapping</li>
+						<li>High-fidelity design mockups</li>
+						<li>Interactive prototypes</li>
+						<li>Design system creation</li>
+					</ul>
+				</div>
+				<div class="workflow-item">
+					<div class="step-number">03</div>
+					<h3 class="step-title">Development & Integration</h3>
+					<p class="step-description">
+						Building robust, scalable solutions using cutting-edge technologies and best practices
+						for optimal performance and security.
+					</p>
+					<ul class="step-features">
+						<li>Frontend & backend development</li>
+						<li>API integration & optimization</li>
+						<li>Database design & implementation</li>
+						<li>Security & performance optimization</li>
+					</ul>
+				</div>
+				<div class="workflow-item">
+					<div class="step-number">04</div>
+					<h3 class="step-title">Testing & Launch</h3>
+					<p class="step-description">
+						Rigorous testing ensures flawless functionality across all devices and browsers before a
+						smooth, successful launch.
+					</p>
+					<ul class="step-features">
+						<li>Comprehensive quality assurance</li>
+						<li>Cross-browser compatibility testing</li>
+						<li>Performance & load testing</li>
+						<li>Deployment & launch support</li>
+					</ul>
+				</div>
+			</div>
+		</div>
+	</div>
+</section>
+
+<script src="./index.ts"></script>
+
+<style>
+	@import "tailwindcss/theme" theme(reference);
+	@import "@/styles/tailwind-theme.css" theme(reference);
+
+	.workflow-section {
+		@apply py-16 md:py-24;
+		min-height: 200vh;
+		background: var(--bg-primary);
+	}
+
+	.workflow-container {
+		@apply mx-auto max-w-6xl px-8;
+	}
+
+	.workflow-content {
+		@apply grid grid-cols-1 items-start gap-8 md:grid-cols-2 md:gap-16;
+	}
+
+	.left-column {
+		@apply h-fit;
+	}
+
+	.workflow-header {
+		@apply text-center;
+	}
+
+	.workflow-title {
+		@apply mb-8 text-4xl leading-none font-black tracking-tight uppercase md:text-5xl lg:text-6xl xl:text-7xl;
+	}
+
+	.workflow-title span {
+		@apply block;
+	}
+
+	.main-text-gradient {
+		@apply bg-gradient-to-r from-purple-500 to-blue-500 bg-clip-text text-transparent;
+	}
+
+	.gear-container {
+		@apply mt-8 flex items-center justify-center;
+	}
+
+	.gear-animation {
+		@apply h-48 w-48 md:h-52 md:w-52 lg:h-56 lg:w-56;
+		filter: drop-shadow(0 10px 30px color-mix(in srgb, var(--color-primary-500) 30%, transparent));
+	}
+
+	.right-column {
+		@apply py-8 md:py-16;
+	}
+
+	.workflow-item {
+		@apply mb-16 rounded-3xl border p-8 transition-all duration-500;
+		background: var(--bg-card);
+		backdrop-filter: blur(10px);
+		border-color: var(--border-primary);
+	}
+
+	.step-number {
+		@apply mb-4 text-sm font-bold tracking-wider uppercase;
+		color: var(--text-price);
+	}
+
+	.step-title {
+		@apply mb-6 text-3xl leading-tight font-extrabold md:text-4xl;
+		color: var(--text-primary);
+	}
+
+	.step-description {
+		@apply mb-8 text-lg leading-relaxed;
+		color: var(--text-secondary);
+	}
+
+	.step-features {
+		@apply m-0 list-none space-y-3 p-0;
+	}
+
+	.step-features li {
+		@apply relative pl-8 text-base leading-relaxed;
+		color: var(--text-secondary);
+	}
+
+	.step-features li::before {
+		@apply absolute top-0 left-0 text-lg font-bold;
+		content: "✓";
+		color: var(--text-price);
+	}
+
+	@media (max-width: 768px) {
+		.workflow-content {
+			@apply grid-cols-1 gap-8;
+		}
+
+		.left-column {
+			@apply relative;
+		}
+
+		.workflow-title {
+			@apply text-4xl md:text-5xl;
+		}
+
+		.gear-animation {
+			@apply h-36 w-36 md:h-40 md:w-40;
+		}
+
+		.workflow-item {
+			@apply mb-12 p-6;
+		}
+
+		.step-title {
+			@apply text-2xl md:text-3xl;
+		}
+
+		.step-description {
+			@apply text-base md:text-lg;
+		}
+	}
+</style>

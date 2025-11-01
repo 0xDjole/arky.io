@@ -1,0 +1,46 @@
+/* buttons, 4 variants: "primary", "secondary", "outline", "ghost" */
+.button {
+	@apply flex items-center justify-center rounded-md px-4 py-1 font-semibold;
+	@apply focus:outline-hidden disabled:pointer-events-none;
+	outline-color: var(--border-brand);
+}
+
+.button--primary {
+	@apply from-primary-400 via-primary-500 to-primary-600 bg-gradient-to-b text-white transition-colors;
+	@apply hover:to-primary-700;
+	@apply focus-visible:ring-2 focus-visible:ring-offset-2;
+	--tw-ring-color: var(--color-primary-500);
+}
+
+.button--secondary {
+	background-color: var(--bg-secondary);
+	border: 1px solid var(--border-brand);
+	color: var(--text-primary);
+	@apply transition-colors;
+}
+
+.button--secondary:hover {
+	border-color: var(--border-brand);
+	opacity: 0.8;
+}
+
+.button--outline {
+	background-color: var(--bg-secondary);
+	border: 1px solid var(--border-brand);
+	color: var(--text-primary);
+	@apply transition-colors;
+}
+
+.button--outline:hover {
+	border-color: var(--border-brand);
+	opacity: 0.8;
+}
+
+.button--ghost {
+	@apply no-underline transition-colors;
+	color: var(--text-primary);
+}
+
+.button--ghost:hover {
+	color: var(--text-secondary);
+}
