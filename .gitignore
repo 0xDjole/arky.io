@@ -20,10 +20,8 @@ pnpm-debug.log*
 .env
 .env.production
 
-# terraform sensitive files
+# terraform sensitive files (but NOT state files - those are committed)
 deploy/terraform.tfvars
-deploy/terraform.tfstate
-deploy/terraform.tfstate.backup
 deploy/.terraform/
 deploy/.terraform.lock.hcl
 
