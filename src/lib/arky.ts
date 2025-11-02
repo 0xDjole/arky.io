@@ -1,9 +1,9 @@
 import { createArkySDK } from "arky-sdk";
 import appConfig from "../appConfig";
 
-// Get API URL from environment
-const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:8000";
-const STORAGE_URL = import.meta.env.PUBLIC_STORAGE_URL || "https://storage.arky.io/dev";
+// Get API URL from appConfig (which is based on PUBLIC_ENVIRONMENT)
+const API_URL = appConfig.apiUrl;
+const STORAGE_URL = appConfig.storageUrl;
 // Build-time admin token for SSR (private, not exposed to client)
 const ARKY_TOKEN = import.meta.env.ARKY_TOKEN || "";
 

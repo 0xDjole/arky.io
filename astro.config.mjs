@@ -7,8 +7,14 @@ import compress from "@playform/compress";
 import icon from "astro-icon";
 import svelte from "@astrojs/svelte";
 import fs from "fs";
+import { loadEnv } from "vite";
 
-const environment = process.env.PUBLIC_ENVIRONMENT || 'dev';
+// Load env file based on NODE_ENV, load ALL env vars (not just VITE_ prefixed)
+// Use 'development' for dev, 'production' for build
+const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development';
+const env = loadEnv(mode, process.cwd(), '');
+
+const environment = env.PUBLIC_ENVIRONMENT || 'dev';
 const config = JSON.parse(fs.readFileSync(`./config/${environment}.json`, 'utf-8'));
 
 // https://astro.build/config
