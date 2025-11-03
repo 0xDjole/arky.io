@@ -144,8 +144,8 @@ let countryCodes = $derived.by(() => {
 	// Helper function to update block value properly
 	function updateBlockValue(idx: number, value: string) {
 		const block = blocks[idx];
-		// For PHONE_NUMBER, EMAIL, URL blocks, use plain string (Vec<String>)
-		if (block.type === 'PHONE_NUMBER' || block.type === 'EMAIL' || block.type === 'URL') {
+		// For PHONE_NUMBER, EMAIL blocks, use plain string (Vec<String>)
+		if (block.type === 'PHONE_NUMBER' || block.type === 'EMAIL') {
 			update(idx, value);
 		} else {
 			// For TEXT blocks, use { en: value } format (Vec<HashMap<String, String>>)
@@ -185,7 +185,7 @@ let countryCodes = $derived.by(() => {
 		}
 		
 		// Phone validation - must be verified
-		if ((block.type === 'PHONE_NUMBER' || block.type === 'TEXT_PHONE') && trimmedValue) {
+		if (block.type === 'PHONE_NUMBER' && trimmedValue) {
 			if (!phoneVerified[block.id]) {
 				return 'Please verify your phone number';
 			}
@@ -248,7 +248,7 @@ let countryCodes = $derived.by(() => {
 				</label>
 			{/if}
 
-			{#if block.type === 'PHONE_NUMBER' || block.type === 'TEXT_PHONE'}
+			{#if block.type === 'PHONE_NUMBER'}
 				<PhoneInput
 					blockId={block.id}
 					value={getBlockValue(block)}
@@ -272,21 +272,6 @@ let countryCodes = $derived.by(() => {
 						{getValidationError(block, getBlockValue(block))}
 					</div>
 				{/if}
-			{:else if block.type === 'URL'}
-				<!-- URL input with specific validation -->
-				<TextInput
-					value={getBlockValue(block)}
-					placeholder={block.properties?.placeholder || 'URL'}
-					required={isFieldRequired(block)}
-					onChange={(value) => updateBlockValue(idx, value)}
-					onBlur={() => validateAllFields()}
-				/>
-				{#if getValidationError(block, getBlockValue(block))}
-					<div class="mt-1 text-xs text-error font-medium">
-						<Icon icon="mdi:alert-circle" class="w-3 h-3 inline mr-1" />
-						{getValidationError(block, getBlockValue(block))}
-					</div>
-				{/if}
 			{:else if block.type === 'TEXT_NOTE'}
 				<!-- Textarea for notes -->
 				<TextAreaInput
@@ -296,7 +281,7 @@ let countryCodes = $derived.by(() => {
 					onChange={(value) => updateBlockValue(idx, value)}
 					onBlur={() => validateAllFields()}
 				/>
-			{:else if block.type === 'TEXT' || block.type === 'TEXT_P' || block.type === 'TEXT_H1' || block.type === 'TEXT_H2' || block.type === 'TEXT_H3' || block.type === 'TEXT_HTML' || block.type === 'TEXT_URL' || block.type === 'TEXT_LIST'}
+			{:else if block.type === 'TEXT'}
 				{#if block.properties?.options && block.properties.options.length > 0}
 					<!-- Dropdown for fields with options -->
 					<SelectInput

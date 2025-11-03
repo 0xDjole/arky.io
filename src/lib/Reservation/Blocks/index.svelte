@@ -70,37 +70,7 @@
 	</div>
 {:else}
 	{#each blocks as block (block.id)}
-		{#if block.type === 'TEXT_P'}
-			<p class="my-2" style={getStyleString(block)}>
-				{getLocalizedContent(block.value?.[0])}
-			</p>
-		{:else if block.type === 'TEXT_H1'}
-			<h1 class="text-3xl font-bold my-4" style={getStyleString(block)}>
-				{getLocalizedContent(block.value?.[0])}
-			</h1>
-		{:else if block.type === 'TEXT_H2'}
-			<h2 class="text-2xl font-semibold my-3" style={getStyleString(block)}>
-				{getLocalizedContent(block.value?.[0])}
-			</h2>
-		{:else if block.type === 'TEXT_H3'}
-			<h3 class="text-xl font-medium my-2" style={getStyleString(block)}>
-				{getLocalizedContent(block.value?.[0])}
-			</h3>
-		{:else if block.type === 'TEXT_URL'}
-			{@const linkText = getLocalizedContent(block.value?.[0]) || block.properties?.url || 'Link'}
-			{@const url = block.properties?.url}
-			{#if url}
-				<div style={getStyleString(block)}>
-					<a href={url} target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:text-blue-700 underline break-all">
-						{linkText}
-					</a>
-				</div>
-			{:else}
-				<div style={getStyleString(block)} class="text-gray-500 italic">
-					[URL: {linkText}]
-				</div>
-			{/if}
-		{:else if block.type === 'TEXT'}
+		{#if block.type === 'TEXT'}
 			{@const content = getLocalizedContent(block.value?.[0])}
 			{@const url = block.properties?.url}
 			{#if url}
@@ -120,13 +90,6 @@
 			<a href="mailto:{emailValue}" class="text-blue-500 hover:text-blue-700 underline" style={getStyleString(block)}>
 				{emailValue}
 			</a>
-		{:else if block.type === 'URL'}
-			{@const urlValue = block.value?.[0] || ''}
-			{#if urlValue}
-				<a href={urlValue} target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:text-blue-700 underline break-all" style={getStyleString(block)}>
-					{urlValue}
-				</a>
-			{/if}
 		{:else if (block.type === 'RELATIONSHIP_MEDIA' || block.type === 'RELATIONSHIP') && block.value?.[0]?.mimeType}
 			{@const mediaValue = block.value[0]}
 			{@const imageUrl = getImageUrl(mediaValue, false)}
