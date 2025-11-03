@@ -92,12 +92,12 @@ async function handleApplyPromoCode(code: string) {
 
 	async function handlePhoneSendCode(blockId, phone) {
 		store.setKey('phoneNumber', phone);
-		return await actions.updateProfilePhone();
+		return await actions.addPhoneNumber();
 	}
 
 	async function handlePhoneVerifyCode(blockId, code) {
 		store.setKey('verificationCode', code);
-		return await actions.verifyPhoneCode();
+		return await actions.phoneNumberConfirm();
 	}
 
 

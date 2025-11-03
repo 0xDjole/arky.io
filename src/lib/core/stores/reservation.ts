@@ -670,7 +670,7 @@ export const actions = {
     },
 
     // Phone verification
-    async updateProfilePhone(): Promise<boolean> {
+    async addPhoneNumber(): Promise<boolean> {
         store.setKey("phoneError", null);
         store.setKey("phoneSuccess", null);
         store.setKey("isSendingCode", true);
@@ -684,7 +684,7 @@ export const actions = {
                 return false;
             }
 
-            await arky.user.updateProfilePhone({ phoneNumber }, {
+            await arky.user.addPhoneNumber({ phoneNumber }, {
                 successMessage: 'Verification code sent successfully!'
             });
 
@@ -699,7 +699,7 @@ export const actions = {
         }
     },
 
-    async verifyPhoneCode(): Promise<boolean> {
+    async phoneNumberConfirm(): Promise<boolean> {
         store.setKey("verifyError", null);
         store.setKey("isVerifying", true);
 
@@ -712,7 +712,7 @@ export const actions = {
                 return false;
             }
 
-            await arky.user.verifyPhoneCode({ phoneNumber, code: verificationCode }, {
+            await arky.user.phoneNumberConfirm({ phoneNumber, code: verificationCode }, {
                 successMessage: 'Phone verified successfully!'
             });
 

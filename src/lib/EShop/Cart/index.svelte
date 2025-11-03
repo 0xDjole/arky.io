@@ -71,12 +71,12 @@
 
 	async function handlePhoneSendCode(blockId, phone) {
 		store.setKey('phoneNumber', phone);
-		return await actions.updateProfilePhone();
+		return await actions.addPhoneNumber();
 	}
 
 	async function handlePhoneVerifyCode(blockId, code) {
 		store.setKey('verificationCode', code);
-		return await actions.verifyPhoneCode();
+		return await actions.phoneNumberConfirm();
 	}
 
 // Format a single cart line price (handles both legacy and new price shapes)

@@ -241,11 +241,11 @@ export const actions = {
     },
 
     // Phone verification for eshop
-    async updateProfilePhone(): Promise<boolean> {
+    async addPhoneNumber(): Promise<boolean> {
         try {
             const phoneNumber = store.get().phoneNumber;
 
-            await arky.user.updateProfilePhone({ phoneNumber }, {
+            await arky.user.addPhoneNumber({ phoneNumber }, {
                 successMessage: 'Verification code sent successfully!',
                 errorMessage: 'Failed to send verification code'
             });
@@ -258,12 +258,12 @@ export const actions = {
         }
     },
 
-    async verifyPhoneCode(): Promise<boolean> {
+    async phoneNumberConfirm(): Promise<boolean> {
         try {
             const phoneNumber = store.get().phoneNumber;
             const verificationCode = store.get().verificationCode;
 
-            await arky.user.verifyPhoneCode({ phoneNumber, code: verificationCode }, {
+            await arky.user.phoneNumberConfirm({ phoneNumber, code: verificationCode }, {
                 successMessage: 'Phone verified successfully!',
                 errorMessage: 'Failed to verify phone'
             });
