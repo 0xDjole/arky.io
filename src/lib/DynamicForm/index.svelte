@@ -115,7 +115,9 @@ let countryCodes = $derived.by(() => {
 	function getBlockValue(block: any): string {
 		if (!block.value || !block.value[0]) return '';
 		const val = block.value[0];
+		// For PHONE_NUMBER, EMAIL, URL blocks that have Vec<String> values
 		if (typeof val === 'string') return val;
+		// For TEXT blocks that have Vec<HashMap<String, String>> values
 		if (typeof val === 'object' && val.en !== undefined) return val.en || '';
 		return '';
 	}
@@ -139,9 +141,16 @@ let countryCodes = $derived.by(() => {
 		setTimeout(validateAllFields, 0);
 	}
 
-	// Helper function to update block value properly - always use { en: value } format
+	// Helper function to update block value properly
 	function updateBlockValue(idx: number, value: string) {
-		update(idx, { en: value });
+		const block = blocks[idx];
+		// For PHONE_NUMBER, EMAIL, URL blocks, use plain string (Vec<String>)
+		if (block.type === 'PHONE_NUMBER' || block.type === 'EMAIL' || block.type === 'URL') {
+			update(idx, value);
+		} else {
+			// For TEXT blocks, use { en: value } format (Vec<HashMap<String, String>>)
+			update(idx, { en: value });
+		}
 	}
 
 	// Helper function to check if field is required based on pattern
@@ -176,7 +185,7 @@ let countryCodes = $derived.by(() => {
 		}
 		
 		// Phone validation - must be verified
-		if (block.properties?.variant === 'PHONE_NUMBER' && trimmedValue) {
+		if ((block.type === 'PHONE_NUMBER' || block.type === 'TEXT_PHONE') && trimmedValue) {
 			if (!phoneVerified[block.id]) {
 				return 'Please verify your phone number';
 			}
@@ -239,26 +248,56 @@ let countryCodes = $derived.by(() => {
 				</label>
 			{/if}
 
-			{#if block.type === 'TEXT'}
-				{#if block.properties?.variant === 'PHONE_NUMBER'}
-					<PhoneInput
-						blockId={block.id}
-						value={getBlockValue(block)}
-						onChange={(value) => updateBlockValue(idx, value)}
-						onSendCode={onPhoneSendCode}
-						onVerifyCode={onPhoneVerifyCode}
-						onValidationChange={(isVerified) => handlePhoneValidation(block.id, isVerified)}
-					/>
-				{:else if block.properties?.variant === 'NOTE'}
-					<!-- Textarea for notes -->
-					<TextAreaInput
-						value={getBlockValue(block)}
-						placeholder={block.properties?.placeholder || ''}
-						required={isFieldRequired(block)}
-						onChange={(value) => updateBlockValue(idx, value)}
-						onBlur={() => validateAllFields()}
-					/>
-				{:else if block.properties?.options && block.properties.options.length > 0}
+			{#if block.type === 'PHONE_NUMBER' || block.type === 'TEXT_PHONE'}
+				<PhoneInput
+					blockId={block.id}
+					value={getBlockValue(block)}
+					onChange={(value) => updateBlockValue(idx, value)}
+					onSendCode={onPhoneSendCode}
+					onVerifyCode={onPhoneVerifyCode}
+					onValidationChange={(isVerified) => handlePhoneValidation(block.id, isVerified)}
+				/>
+			{:else if block.type === 'EMAIL'}
+				<!-- Email input with specific validation -->
+				<TextInput
+					value={getBlockValue(block)}
+					placeholder={block.properties?.placeholder || 'Email'}
+					required={isFieldRequired(block)}
+					onChange={(value) => updateBlockValue(idx, value)}
+					onBlur={() => validateAllFields()}
+				/>
+				{#if getValidationError(block, getBlockValue(block))}
+					<div class="mt-1 text-xs text-error font-medium">
+						<Icon icon="mdi:alert-circle" class="w-3 h-3 inline mr-1" />
+						{getValidationError(block, getBlockValue(block))}
+					</div>
+				{/if}
+			{:else if block.type === 'URL'}
+				<!-- URL input with specific validation -->
+				<TextInput
+					value={getBlockValue(block)}
+					placeholder={block.properties?.placeholder || 'URL'}
+					required={isFieldRequired(block)}
+					onChange={(value) => updateBlockValue(idx, value)}
+					onBlur={() => validateAllFields()}
+				/>
+				{#if getValidationError(block, getBlockValue(block))}
+					<div class="mt-1 text-xs text-error font-medium">
+						<Icon icon="mdi:alert-circle" class="w-3 h-3 inline mr-1" />
+						{getValidationError(block, getBlockValue(block))}
+					</div>
+				{/if}
+			{:else if block.type === 'TEXT_NOTE'}
+				<!-- Textarea for notes -->
+				<TextAreaInput
+					value={getBlockValue(block)}
+					placeholder={block.properties?.placeholder || ''}
+					required={isFieldRequired(block)}
+					onChange={(value) => updateBlockValue(idx, value)}
+					onBlur={() => validateAllFields()}
+				/>
+			{:else if block.type === 'TEXT' || block.type === 'TEXT_P' || block.type === 'TEXT_H1' || block.type === 'TEXT_H2' || block.type === 'TEXT_H3' || block.type === 'TEXT_HTML' || block.type === 'TEXT_URL' || block.type === 'TEXT_LIST'}
+				{#if block.properties?.options && block.properties.options.length > 0}
 					<!-- Dropdown for fields with options -->
 					<SelectInput
 						value={getBlockValue(block)}
@@ -347,22 +386,12 @@ let countryCodes = $derived.by(() => {
 				/>
 
 			{:else if block.type === 'NUMBER'}
-				{#if block.properties?.variant === 'RANGE' && block.properties?.options?.length >= 2}
-					{@const { min, max } = parseRangeOptions(block.properties.options)}
-					<RangeInput
-						value={block.value?.[0] ?? min}
-						{min}
-						{max}
-						onChange={(value) => update(idx, value)}
-					/>
-				{:else}
-					<RangeInput
-						value={block.value?.[0] ?? block.properties.min ?? 0}
-						min={block.properties.min ?? 0}
-						max={block.properties.max ?? 100}
-						onChange={(value) => update(idx, value)}
-					/>
-				{/if}
+				<RangeInput
+					value={block.value?.[0] ?? block.properties.min ?? 0}
+					min={block.properties.min ?? 0}
+					max={block.properties.max ?? 100}
+					onChange={(value) => update(idx, value)}
+				/>
 			{/if}
 
 			{#if block.properties?.description}

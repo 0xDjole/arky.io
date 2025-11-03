@@ -5,6 +5,9 @@
 	// Get localized content
 	function getLocalizedContent(content) {
 		if (!content) return '';
+		// If content is a string (PHONE_NUMBER, EMAIL, URL blocks), return it directly
+		if (typeof content === 'string') return content;
+		// If content is an object with locales (TEXT blocks)
 		if (content[locale]) return content[locale];
 		if (content.en) return content.en;
 		return content;
@@ -32,7 +35,7 @@
 	// Convert style object to CSS string
 	function getStyleString(block) {
 		if (!block?.properties?.style) return '';
-		
+
 		// Convert camelCase to kebab-case and build CSS string
 		return Object.entries(block.properties.style)
 			.map(([key, value]) => {
@@ -41,6 +44,13 @@
 				return `${kebabKey}: ${value}`;
 			})
 			.join('; ');
+	}
+
+	// Check if a block is a badge block based on its key
+	function isBadgeBlock(block) {
+		if (block.type !== 'BLOCK') return false;
+		const badgeKeys = ['phone_number', 'viber', 'whatsapp', 'telegram', 'email', 'facebook', 'instagram', 'twitter'];
+		return badgeKeys.includes(block.key);
 	}
 	
 </script>
@@ -60,23 +70,23 @@
 	</div>
 {:else}
 	{#each blocks as block (block.id)}
-		{#if block.type === 'TEXT' && block.properties?.variant === 'P'}
+		{#if block.type === 'TEXT_P'}
 			<p class="my-2" style={getStyleString(block)}>
 				{getLocalizedContent(block.value?.[0])}
 			</p>
-		{:else if block.type === 'TEXT' && block.properties?.variant === 'H1'}
+		{:else if block.type === 'TEXT_H1'}
 			<h1 class="text-3xl font-bold my-4" style={getStyleString(block)}>
 				{getLocalizedContent(block.value?.[0])}
 			</h1>
-		{:else if block.type === 'TEXT' && block.properties?.variant === 'H2'}
+		{:else if block.type === 'TEXT_H2'}
 			<h2 class="text-2xl font-semibold my-3" style={getStyleString(block)}>
 				{getLocalizedContent(block.value?.[0])}
 			</h2>
-		{:else if block.type === 'TEXT' && block.properties?.variant === 'H3'}
+		{:else if block.type === 'TEXT_H3'}
 			<h3 class="text-xl font-medium my-2" style={getStyleString(block)}>
 				{getLocalizedContent(block.value?.[0])}
 			</h3>
-		{:else if block.type === 'TEXT' && block.properties?.variant === 'URL'}
+		{:else if block.type === 'TEXT_URL'}
 			{@const linkText = getLocalizedContent(block.value?.[0]) || block.properties?.url || 'Link'}
 			{@const url = block.properties?.url}
 			{#if url}
@@ -100,7 +110,24 @@
 			{:else}
 				<p style={getStyleString(block)}>{content}</p>
 			{/if}
-		{:else if block.type === 'RELATIONSHIP' && block.value?.[0]?.mimeType}
+		{:else if block.type === 'PHONE_NUMBER'}
+			{@const phoneValue = block.value?.[0] || ''}
+			<a href="tel:{phoneValue}" class="text-blue-500 hover:text-blue-700 underline" style={getStyleString(block)}>
+				{phoneValue}
+			</a>
+		{:else if block.type === 'EMAIL'}
+			{@const emailValue = block.value?.[0] || ''}
+			<a href="mailto:{emailValue}" class="text-blue-500 hover:text-blue-700 underline" style={getStyleString(block)}>
+				{emailValue}
+			</a>
+		{:else if block.type === 'URL'}
+			{@const urlValue = block.value?.[0] || ''}
+			{#if urlValue}
+				<a href={urlValue} target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:text-blue-700 underline break-all" style={getStyleString(block)}>
+					{urlValue}
+				</a>
+			{/if}
+		{:else if (block.type === 'RELATIONSHIP_MEDIA' || block.type === 'RELATIONSHIP') && block.value?.[0]?.mimeType}
 			{@const mediaValue = block.value[0]}
 			{@const imageUrl = getImageUrl(mediaValue, false)}
 			{@const url = block.properties?.url}
@@ -124,7 +151,7 @@
 					{/if}
 				</div>
 			{/if}
-		{:else if block.type === 'BLOCK' && block.properties?.variant === 'badge'}
+		{:else if isBadgeBlock(block)}
 			{@const badgeText = getBadgeText(block, locale)}
 			{@const badgeImage = getBadgeImage(block)}
 			
@@ -152,7 +179,7 @@
 					{badgeText}
 				</span>
 			</div>
-		{:else if block.type === 'BLOCK' && block.properties?.variant === 'ul'}
+		{:else if block.type === 'BLOCK' && block.key === 'ul'}
 			<ul class="list-disc pl-5 my-3 space-y-1" style={getStyleString(block)}>
 				{#each block.value as item}
 					<li>
@@ -160,7 +187,7 @@
 					</li>
 				{/each}
 			</ul>
-		{:else if block.type === 'BLOCK' && block.properties?.variant === 'ol'}
+		{:else if block.type === 'BLOCK' && block.key === 'ol'}
 			<ol class="list-decimal pl-5 my-3 space-y-1" style={getStyleString(block)}>
 				{#each block.value as item}
 					<li>
@@ -168,7 +195,7 @@
 					</li>
 				{/each}
 			</ol>
-		{:else if block.type === 'BLOCK' && block.properties?.variant === 'li'}
+		{:else if block.type === 'BLOCK' && block.key === 'li'}
 			{#if block.value}
 				<svelte:self blocks={block.value} isNested={true} {locale} />
 			{/if}
