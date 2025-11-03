@@ -282,25 +282,13 @@ let countryCodes = $derived.by(() => {
 					onBlur={() => validateAllFields()}
 				/>
 			{:else if block.type === 'TEXT'}
-				{#if block.properties?.options && block.properties.options.length > 0}
-					<!-- Dropdown for fields with options -->
-					<SelectInput
-						value={getBlockValue(block)}
-						options={block.properties.options}
-						required={isFieldRequired(block)}
-						locale={currLocale}
-						onChange={(value) => updateBlockValue(idx, value)}
-						onBlur={() => validateAllFields()}
-					/>
-				{:else}
-					<TextInput
-						value={getBlockValue(block)}
-						placeholder={block.properties?.placeholder || ''}
-						required={isFieldRequired(block)}
-						onChange={(value) => updateBlockValue(idx, value)}
-						onBlur={() => validateAllFields()}
-					/>
-				{/if}
+				<TextInput
+					value={getBlockValue(block)}
+					placeholder={block.properties?.placeholder || ''}
+					required={isFieldRequired(block)}
+					onChange={(value) => updateBlockValue(idx, value)}
+					onBlur={() => validateAllFields()}
+				/>
 				{#if getValidationError(block, getBlockValue(block))}
 					<div class="mt-1 text-xs text-error font-medium">
 						<Icon icon="mdi:alert-circle" class="w-3 h-3 inline mr-1" />
