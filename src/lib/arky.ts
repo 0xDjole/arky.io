@@ -72,7 +72,6 @@ export const arky = createArkySDK({
 
 	navigate: undefined,
 	loginFallbackPath: undefined,
-	notify: undefined,
 });
 
 export default arky;

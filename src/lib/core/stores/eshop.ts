@@ -12,6 +12,7 @@ import {
     businessActions
 } from "./business";
 import type { EshopCartItem, EshopStoreState, Block, Price, Payment, Quote } from "../types";
+import { onSuccess, onError } from "@lib/utils/notify";
 import { PaymentMethod } from "../types";
 // Toast notifications should be handled by UI layer
 
@@ -218,8 +219,8 @@ export const actions = {
                 shippingMethodId: shippingMethod.id,
                 promoCode: promo || undefined,
             }, {
-                successMessage: 'Order placed successfully!',
-                errorMessage: 'Failed to place order'
+                onSuccess: onSuccess('Order placed successfully!'),
+                onError: onError('Failed to place order')
             });
 
             return {
@@ -246,8 +247,8 @@ export const actions = {
             const phoneNumber = store.get().phoneNumber;
 
             await arky.user.addPhoneNumber({ phoneNumber }, {
-                successMessage: 'Verification code sent successfully!',
-                errorMessage: 'Failed to send verification code'
+                onSuccess: onSuccess('Verification code sent successfully!'),
+                onError: onError('Failed to send verification code')
             });
             store.setKey("phoneError", null);
             return true;
@@ -264,8 +265,8 @@ export const actions = {
             const verificationCode = store.get().verificationCode;
 
             await arky.user.phoneNumberConfirm({ phoneNumber, code: verificationCode }, {
-                successMessage: 'Phone verified successfully!',
-                errorMessage: 'Failed to verify phone'
+                onSuccess: onSuccess('Phone verified successfully!'),
+                onError: onError('Failed to verify phone')
             });
             store.setKey("verifyError", null);
             return true;

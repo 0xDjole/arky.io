@@ -14,6 +14,7 @@ import {
 } from "./business";
 import type { ReservationStoreState, ReservationCartPart, Business, Block, Payment } from "../types";
 import { PaymentMethod } from "../types";
+import { onSuccess, onError } from "@lib/utils/notify";
 
 export const cartParts = persistentAtom<ReservationCartPart[]>("reservationCart", [], {
     encode: JSON.stringify,
@@ -685,7 +686,7 @@ export const actions = {
             }
 
             await arky.user.addPhoneNumber({ phoneNumber }, {
-                successMessage: 'Verification code sent successfully!'
+                onSuccess: onSuccess('Verification code sent successfully!')
             });
 
             store.setKey("phoneSuccess", "Verification code sent successfully!");
@@ -713,7 +714,7 @@ export const actions = {
             }
 
             await arky.user.phoneNumberConfirm({ phoneNumber, code: verificationCode }, {
-                successMessage: 'Phone verified successfully!'
+                onSuccess: onSuccess('Phone verified successfully!')
             });
 
             store.setKey("isPhoneVerified", true);
