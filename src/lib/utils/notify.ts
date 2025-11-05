@@ -22,28 +22,14 @@ export type ErrorContext = {
   aborted?: boolean;
 };
 
-export function onSuccess<T = any>(
-  message: string | ((ctx: SuccessContext<T>) => string),
-  opts?: { duration?: number; also?: (ctx: SuccessContext<T>) => void | Promise<void> }
-) {
-  return async (ctx: SuccessContext<T>) => {
-    try {
-      const msg = typeof message === 'function' ? message(ctx) : message;
-      if (msg) showToast(msg, 'success', opts?.duration ?? 3000);
-      if (opts?.also) await opts.also(ctx);
-    } catch {}
+export function onSuccess(message: string, duration?: number) {
+  return () => {
+    if (message) showToast(message, 'success', duration ?? 3000);
   };
 }
 
-export function onError(
-  message: string | ((ctx: ErrorContext) => string),
-  opts?: { duration?: number; also?: (ctx: ErrorContext) => void | Promise<void> }
-) {
-  return async (ctx: ErrorContext) => {
-    try {
-      const msg = typeof message === 'function' ? message(ctx) : message;
-      if (msg) showToast(msg, 'error', opts?.duration ?? 4000);
-      if (opts?.also) await opts.also(ctx);
-    } catch {}
+export function onError(message: string, duration?: number) {
+  return () => {
+    if (message) showToast(message, 'error', duration ?? 4000);
   };
 }
