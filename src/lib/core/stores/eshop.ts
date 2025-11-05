@@ -219,8 +219,8 @@ export const actions = {
                 shippingMethodId: shippingMethod.id,
                 promoCode: promo || undefined,
             }, {
-                onSuccess: onSuccess('Order placed successfully!'),
-                onError: onError('Failed to place order')
+                onSuccess: () => onSuccess('Order placed successfully!')(),
+                onError: () => onError('Failed to place order')()
             });
 
             return {
@@ -247,8 +247,8 @@ export const actions = {
             const phoneNumber = store.get().phoneNumber;
 
             await arky.user.addPhoneNumber({ phoneNumber }, {
-                onSuccess: onSuccess('Verification code sent successfully!'),
-                onError: onError('Failed to send verification code')
+                onSuccess: () => onSuccess('Verification code sent successfully!')(),
+                onError: () => onError('Failed to send verification code')()
             });
             store.setKey("phoneError", null);
             return true;
@@ -265,8 +265,8 @@ export const actions = {
             const verificationCode = store.get().verificationCode;
 
             await arky.user.phoneNumberConfirm({ phoneNumber, code: verificationCode }, {
-                onSuccess: onSuccess('Phone verified successfully!'),
-                onError: onError('Failed to verify phone')
+                onSuccess: () => onSuccess('Phone verified successfully!')(),
+                onError: () => onError('Failed to verify phone')()
             });
             store.setKey("verifyError", null);
             return true;

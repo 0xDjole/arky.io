@@ -686,7 +686,7 @@ export const actions = {
             }
 
             await arky.user.addPhoneNumber({ phoneNumber }, {
-                onSuccess: onSuccess('Verification code sent successfully!')
+                onSuccess: () => onSuccess('Verification code sent successfully!')()
             });
 
             store.setKey("phoneSuccess", "Verification code sent successfully!");
@@ -714,7 +714,7 @@ export const actions = {
             }
 
             await arky.user.phoneNumberConfirm({ phoneNumber, code: verificationCode }, {
-                onSuccess: onSuccess('Phone verified successfully!')
+                onSuccess: () => onSuccess('Phone verified successfully!')()
             });
 
             store.setKey("isPhoneVerified", true);
