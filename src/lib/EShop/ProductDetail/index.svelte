@@ -49,25 +49,51 @@
 		return arky.utils.getMarketPrice(prices, marketId);
 	}
 
-	function getGalleryThumbnail(gallery) {
-		if (!gallery?.length) return null;
-		const item = gallery.find((g) => g.settings?.isThumbnail) || gallery[0];
-		const res = item.media.resolutions.thumbnail || item.media.resolutions.original;
+	function extractGalleryFromBlocks(blocks) {
+		if (!blocks || !Array.isArray(blocks)) return [];
+
+		const galleryBlock = blocks.find((block) => block.key === 'gallery');
+		if (!galleryBlock?.value?.length) return [];
+
+		return galleryBlock.value
+			.map((itemBlock) => {
+				if (!itemBlock.value || !Array.isArray(itemBlock.value)) return null;
+
+				const isThumbnailBlock = itemBlock.value.find((b) => b.key === 'is_thumbnail');
+				const mediaBlock = itemBlock.value.find((b) => b.key === 'media');
+
+				if (!mediaBlock?.value?.[0]) return null;
+
+				return {
+					isThumbnail: isThumbnailBlock?.value?.[0] || false,
+					media: mediaBlock.value[0]
+				};
+			})
+			.filter(Boolean);
+	}
+
+	function getGalleryThumbnail(blocks) {
+		const gallery = extractGalleryFromBlocks(blocks);
+		if (!gallery.length) return null;
+
+		const item = gallery.find((g) => g.isThumbnail) || gallery[0];
+		const res = item.media?.resolutions?.thumbnail || item.media?.resolutions?.original;
 		return res?.url || null;
 	}
 
 	function getProductImages(product) {
-		if (!product.gallery || product.gallery.length === 0) {
+		const gallery = extractGalleryFromBlocks(product.blocks);
+		if (gallery.length === 0) {
 			return [];
 		}
-		
-		return product.gallery.map(item => {
+
+		return gallery.map(item => {
 			if (item?.media?.resolutions) {
 				const original = item.media.resolutions.original?.url;
 				const thumbnail = item.media.resolutions.thumbnail?.url;
-				
+
 				if (!original) return null;
-				
+
 				return {
 					url: `${STORAGE_URL}/${original}`,
 					thumbnail: `${STORAGE_URL}/${thumbnail || original}`,

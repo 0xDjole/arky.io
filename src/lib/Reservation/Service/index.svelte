@@ -34,8 +34,11 @@
 	});
 
 	const locale = getLocale();
-	const thumb = getGalleryThumbnail(service.gallery);
+	const thumb = getGalleryThumbnail(service.blocks);
 	const thumbUrl = thumb ? `${appConfig.storageUrl}/${thumb}` : null;
+
+	// Filter out gallery block from display blocks
+	const displayBlocks = service.blocks?.filter(block => block.key !== 'gallery') || [];
 </script>
 
 <div class="relative mt-16">
@@ -76,7 +79,7 @@
 			<h2 class="text-primary text-2xl font-bold">{t('ui.serviceInformation')}</h2>
 		</div>
 		<div class="p-6">
-			<Blocks blocks={service.infoBlocks} label={t('ui.details')} />
+			<Blocks blocks={displayBlocks} />
 		</div>
 	</div>
 </div>

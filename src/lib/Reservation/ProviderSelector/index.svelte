@@ -2,6 +2,26 @@
 	import Icon from '@iconify/svelte';
 	import { store, actions } from '@lib/core/stores/reservation';
 	import { t } from '../../../lib/i18n/index';
+
+	function getFirstGalleryMedia(blocks) {
+		if (!blocks || !Array.isArray(blocks)) return null;
+
+		const galleryBlock = blocks.find((block) => block.key === 'gallery');
+		if (!galleryBlock?.value?.length) return null;
+
+		const firstItem = galleryBlock.value[0];
+		if (!firstItem?.value || !Array.isArray(firstItem.value)) return null;
+
+		const mediaBlock = firstItem.value.find((b) => b.key === 'media');
+		const media = mediaBlock?.value?.[0];
+
+		// Check if media is a hydrated object with resolutions, not just a string reference
+		if (!media || typeof media === 'string' || !media.resolutions) {
+			return null;
+		}
+
+		return media;
+	}
 </script>
 
 {#if $store.selectedMethod?.includes('SPECIFIC')}
@@ -25,16 +45,17 @@
 		{:else}
 			<div class="grid gap-3 sm:grid-cols-2">
 				{#each $store.providers as r (r.id)}
+					{@const media = getFirstGalleryMedia(r.blocks)}
 					<button
 						on:click={() => actions.selectProvider(r)}
 						class="flex w-full items-center gap-3 rounded-lg border p-3 transition-colors
 							{ $store.selectedProvider?.id === r.id
 								? 'border-primary-500 bg-primary-900/40'
 								: 'border-secondary bg-secondary hover:bg-tertiary' }">
-						{#if r.gallery?.length}
+						{#if media}
 							<div class="h-10 w-10 flex-shrink-0 overflow-hidden rounded-full">
 								<img
-									src={`${$store.storageUrl}/${r.gallery[0].media.resolutions.thumbnail?.url ?? r.gallery[0].media.resolutions.original?.url}`}
+									src={`${$store.storageUrl}/${media.resolutions?.thumbnail?.url ?? media.resolutions?.original?.url}`}
 									alt={r.name}
 									referrerpolicy="no-referrer"
 									class="h-full w-full object-cover"

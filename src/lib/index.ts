@@ -14,9 +14,10 @@ export const getBlockValue = arky.utils.getBlockValue;
 export const getBlockValues = arky.utils.getBlockValues;
 export const getBlockObjectValues = arky.utils.getBlockObjectValues;
 export const getBlockFromArray = arky.utils.getBlockFromArray;
-export const getGalleryThumbnail = arky.utils.getGalleryThumbnail;
 export const formatBlockValue = arky.utils.formatBlockValue;
 export const prepareBlocksForSubmission = arky.utils.prepareBlocksForSubmission;
 export const extractBlockValues = arky.utils.extractBlockValues;
 export const getImageUrl = arky.utils.getImageUrl;
-export const thumbnailUrl = arky.utils.thumbnailUrl;
+
+// arky.io-specific utilities
+export { getGalleryThumbnail, getFirstGalleryMedia } from './utils/gallery';

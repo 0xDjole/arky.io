@@ -30,10 +30,32 @@
 		}
 	}
 
-	function getGalleryThumbnail(gallery) {
-		if (!gallery?.length) return null;
-		const item = gallery.find((g) => g.settings?.isThumbnail) || gallery[0];
-		const res = item.media.resolutions.thumbnail || item.media.resolutions.original;
+	function getGalleryThumbnail(blocks) {
+		if (!blocks || !Array.isArray(blocks)) return null;
+
+		const galleryBlock = blocks.find((block) => block.key === 'gallery');
+		if (!galleryBlock?.value?.length) return null;
+
+		const items = galleryBlock.value
+			.map((itemBlock) => {
+				if (!itemBlock.value || !Array.isArray(itemBlock.value)) return null;
+
+				const isThumbnailBlock = itemBlock.value.find((b) => b.key === 'is_thumbnail');
+				const mediaBlock = itemBlock.value.find((b) => b.key === 'media');
+
+				if (!mediaBlock?.value?.[0]) return null;
+
+				return {
+					isThumbnail: isThumbnailBlock?.value?.[0] || false,
+					media: mediaBlock.value[0]
+				};
+			})
+			.filter(Boolean);
+
+		if (!items.length) return null;
+
+		const item = items.find((g) => g.isThumbnail) || items[0];
+		const res = item.media?.resolutions?.thumbnail || item.media?.resolutions?.original;
 		return res?.url || null;
 	}
 
@@ -110,7 +132,7 @@ function displayVariantPrice(variant) {
 		{:else}
 			{#each products as product}
 				{@const defaultVariant = getDefaultVariant(product)}
-			    {@const thumbPath = getGalleryThumbnail(product.gallery)}
+			    {@const thumbPath = getGalleryThumbnail(product.blocks)}
 			    {@const thumbUrl = thumbPath ? `${STORAGE_URL}/${thumbPath}` : null}
 
 
