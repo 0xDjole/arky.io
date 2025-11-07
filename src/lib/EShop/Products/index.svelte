@@ -1,11 +1,13 @@
 <script>
 	import { onMount } from 'svelte';
 	import { arky } from '@lib/index';
+	import { getLocale } from '@lib/i18n';
 	import appConfig from '../../../appConfig';
 	import { showToast } from '@lib/toast.js';
 	import { store } from '@lib/core/stores/eshop';
 
 	const STORAGE_URL = appConfig.storageUrl;
+	const locale = getLocale();
 
 	let products = [];
 	let loading = true;
@@ -134,11 +136,12 @@ function displayVariantPrice(variant) {
 				{@const defaultVariant = getDefaultVariant(product)}
 			    {@const thumbPath = getGalleryThumbnail(product.blocks)}
 			    {@const thumbUrl = thumbPath ? `${STORAGE_URL}/${thumbPath}` : null}
+			    {@const productSlug = product.seo?.slug?.[locale] || product.seo?.slug?.en || product.id}
 
 
-				
+
 				<a
-					href="/products/{product.slug}"
+					href="/products/{productSlug}"
 					class="bg-card rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300"
 				>
 					{#if thumbUrl}

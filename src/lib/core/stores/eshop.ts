@@ -116,7 +116,7 @@ export const actions = {
                 productId: product.id,
                 variantId: variant.id,
                 productName: product.name,
-                productSlug: product.slug,
+                productSlug: product.seo?.slug?.en || product.seo?.slug?.[Object.keys(product.seo?.slug || {})[0]] || product.id,
                 variantAttributes: variant.attributes || {},
                 price: cartPrice,
                 quantity,

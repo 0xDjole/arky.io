@@ -15,13 +15,18 @@ export async function getStaticPaths() {
 	const { items } = await res.json();
 
 	return items.flatMap((service) =>
-		locales.map((locale) => ({
-			params: {
-				slug: service.slug,
-				locale: locale === defaultLocale ? undefined : locale,
-			},
-			props: { locale },
-		})),
+		locales.map((locale) => {
+			const slug = service.seo?.slug?.[locale] || service.seo?.slug?.en;
+			if (!slug) return null;
+
+			return {
+				params: {
+					slug: slug,
+					locale: locale === defaultLocale ? undefined : locale,
+				},
+				props: { locale },
+			};
+		}).filter(Boolean),
 	);
 }
 

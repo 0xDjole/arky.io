@@ -140,9 +140,10 @@ import { arky } from '@lib/index';
 			{#each services as service (service.id)}
 			{@const thumbPath = getGalleryThumbnail(service.blocks)}
 			{@const thumbUrl = thumbPath ? `${STORAGE_URL}/${thumbPath}` : null}
+			{@const serviceSlug = service.seo?.slug?.[locale] || service.seo?.slug?.en || service.id}
 
 			<a
-				href={getRelativeLocaleUrl(getLocale(), `/services/${service.slug}`) }
+				href={getRelativeLocaleUrl(getLocale(), `/services/${serviceSlug}`) }
 				class="bg-card rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300"
 			>
 				{#if thumbUrl}

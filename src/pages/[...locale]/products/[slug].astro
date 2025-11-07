@@ -18,13 +18,18 @@ export async function getStaticPaths() {
 		const items = data.items || [];
 
 		return items.flatMap((product) =>
-			locales.map((locale) => ({
-				params: {
-					slug: product.slug,
-					locale: locale === defaultLocale ? undefined : locale,
-				},
-				props: { locale },
-			})),
+			locales.map((locale) => {
+				const slug = product.seo?.slug?.[locale] || product.seo?.slug?.en;
+				if (!slug) return null;
+
+				return {
+					params: {
+						slug: slug,
+						locale: locale === defaultLocale ? undefined : locale,
+					},
+					props: { locale },
+				};
+			}).filter(Boolean),
 		);
 	} catch (error) {
 		console.error('Error fetching products for static paths:', error);
@@ -33,10 +38,12 @@ export async function getStaticPaths() {
 }
 
 const { slug } = Astro.params;
+const currLocale = getLocale(Astro.currentLocale);
 
 let product = null;
 try {
-	const productRes = await fetch(`${appConfig.apiUrl}/v1/businesses/${appConfig.businessId}/products/slug/${appConfig.businessId}/${slug}`);
+	const productId = `${appConfig.businessId}:${currLocale}:${slug}`;
+	const productRes = await fetch(`${appConfig.apiUrl}/v1/businesses/${appConfig.businessId}/products/${productId}`);
 
 	if (!productRes.ok) {
 		throw new Error(`Failed to fetch product: ${productRes.status} ${productRes.statusText}`);
@@ -48,8 +55,6 @@ try {
 	// Return 404 if product not found
 	return Astro.redirect("/404");
 }
-
-const currLocale = getLocale(Astro.currentLocale);
 arky.setLocale(currLocale);
 const websiteCollection = await arky.cms.getCollection({ id: "website" });
 const siteData = getBlockFromArray(websiteCollection, "info", currLocale);
