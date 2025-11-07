@@ -10,7 +10,6 @@ import TestimonialCard from "./TestimonialCard.astro";
 import { arky, getBlockObjectValues } from "@lib/index";
 
 const currLocale = getLocale(Astro.currentLocale);
-arky.setLocale(currLocale);
 const websiteCollection = await arky.cms.getCollection({ id: "website" });
 const testimonialData = getBlockObjectValues(websiteCollection, "testimonials", currLocale);
 ---
