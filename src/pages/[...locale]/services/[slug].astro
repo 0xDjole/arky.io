@@ -1,7 +1,7 @@
 ---
 import BaseLayout from "@layouts/BaseLayout.astro";
-import { defaultLocale, getLocale, locales } from "@lib/i18n";
-import { arky, getBlockFromArray } from "@lib/index";
+import { defaultLocale, locales } from "@lib/i18n";
+import { arky } from "@lib/index";
 import Service from "@lib/Reservation/Service/index.svelte";
 import appConfig from "../../../appConfig";
 
@@ -31,11 +31,10 @@ export async function getStaticPaths() {
 }
 
 const { slug } = Astro.params;
-const currLocale = getLocale(Astro.currentLocale);
 
 const service = await arky.reservation.getService({ id: slug });
 const websiteCollection = await arky.cms.getCollection({ id: "website" });
-const siteData = getBlockFromArray(websiteCollection, "info", currLocale);
+const siteData = websiteCollection.getBlock("info");
 
 // Extract strings (handle multilingual objects)
 const siteTitle = typeof siteData.title === 'string' ? siteData.title : (siteData.title?.en || siteData.title?.[Object.keys(siteData.title || {})[0]] || 'Site');

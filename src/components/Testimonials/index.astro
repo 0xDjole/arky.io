@@ -4,14 +4,12 @@
  */
 
 // components
-import { getLocale } from "@lib/i18n";
 import TestimonialCard from "./TestimonialCard.astro";
 
-import { arky, getBlockObjectValues } from "@lib/index";
+import { arky } from "@lib/index";
 
-const currLocale = getLocale(Astro.currentLocale);
 const websiteCollection = await arky.cms.getCollection({ id: "website" });
-const testimonialData = getBlockObjectValues(websiteCollection, "testimonials", currLocale);
+const testimonialData = websiteCollection.getBlockValues("testimonials");
 ---
 
 <section id="testimonial" class="testimonial-pin-section relative h-screen overflow-hidden">

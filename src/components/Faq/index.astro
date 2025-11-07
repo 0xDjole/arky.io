@@ -10,13 +10,11 @@ import {
 	AccordionItem,
 	AccordionTrigger,
 } from "@components/Accordion";
-import { getLocale } from "@lib/i18n";
 
-import { arky, getBlockObjectValues } from "@lib/index";
+import { arky } from "@lib/index";
 
-const currLocale = getLocale(Astro.currentLocale);
 const websiteCollection = await arky.cms.getCollection({ id: "website" });
-const faqData = getBlockObjectValues(websiteCollection, "faq", currLocale);
+const faqData = websiteCollection.getBlockValues("faq");
 ---
 
 <section id="faq" class="site-container my-24 md:my-36">

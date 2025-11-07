@@ -1,11 +1,9 @@
 ---
-import { getLocale } from "@lib/i18n";
-import { arky, getBlockFromArray, getBlockObjectValues } from "@lib/index";
+import { arky } from "@lib/index";
 import { Icon } from "astro-icon/components";
 
-const currLocale = getLocale(Astro.currentLocale);
 const websiteCollection = await arky.cms.getCollection({ id: "website" });
-const info = getBlockFromArray(websiteCollection, "info", currLocale);
+const info = websiteCollection.getBlock("info");
 const aboutTitle = info.aboutTitle;
 const aboutContent = info.aboutContent;
 const aboutImage = info.aboutImage;

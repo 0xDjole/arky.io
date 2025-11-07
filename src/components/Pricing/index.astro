@@ -2,12 +2,10 @@
 import { Icon } from "astro-icon/components";
 import Button from "@components/Button/Button.astro";
 import Switch from "@components/Switch";
-import { arky, getBlockObjectValues } from "@lib/index";
-import { getLocale } from "@lib/i18n";
+import { arky } from "@lib/index";
 
-const currLocale = getLocale(Astro.currentLocale);
 const websiteCollection = await arky.cms.getCollection({ id: "website" });
-const pricingData = getBlockObjectValues(websiteCollection, "pricing_plans", currLocale);
+const pricingData = websiteCollection.getBlockValues("pricing_plans");
 ---
 
 <section id="pricing-4" class="my-24 md:my-36">

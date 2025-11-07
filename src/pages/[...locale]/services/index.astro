@@ -2,8 +2,8 @@
 import BaseLayout from "@layouts/BaseLayout.astro";
 import Services from "@lib/Reservation/Services/index.svelte";
 
-import { arky, getBlockFromArray } from "@lib/index";
-import { defaultLocale, getLocaleFromUrl, locales } from "@lib/i18n";
+import { arky } from "@lib/index";
+import { defaultLocale, locales } from "@lib/i18n";
 
 export function getStaticPaths() {
 	return locales.map((locale) => ({
@@ -14,9 +14,8 @@ export function getStaticPaths() {
 	}));
 }
 
-const currLocale = getLocaleFromUrl(Astro.url);
 const websiteCollection = await arky.cms.getCollection({ id: "website" });
-const siteData = getBlockFromArray(websiteCollection, "info", currLocale);
+const siteData = websiteCollection.getBlock("info");
 
 // Extract strings (handle multilingual objects)
 const siteTitle = typeof siteData.title === 'string' ? siteData.title : (siteData.title?.en || siteData.title?.[Object.keys(siteData.title || {})[0]] || 'Site');

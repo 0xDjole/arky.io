@@ -1,10 +1,8 @@
 ---
-import { getLocale } from "@lib/i18n";
-import { arky, getBlockObjectValues } from "@lib/index";
+import { arky } from "@lib/index";
 
-const currLocale = getLocale(Astro.currentLocale);
 const websiteCollection = await arky.cms.getCollection({ id: "website" });
-const logos = getBlockObjectValues(websiteCollection, "logos", currLocale);
+const logos = websiteCollection.getBlockValues("logos");
 
 const logosWithSvg = await Promise.all(
 	logos.map(async (logo) => {

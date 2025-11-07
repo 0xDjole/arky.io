@@ -1,8 +1,8 @@
 ---
 import BaseLayout from "@layouts/BaseLayout.astro";
 import ProductDetail from "@lib/EShop/ProductDetail/index.svelte";
-import { arky, getBlockFromArray, getImageUrl } from "@lib/index";
-import { defaultLocale, getLocale, locales } from "@lib/i18n";
+import { arky } from "@lib/index";
+import { defaultLocale, locales } from "@lib/i18n";
 import appConfig from "../../../appConfig";
 
 export async function getStaticPaths() {
@@ -38,18 +38,10 @@ export async function getStaticPaths() {
 }
 
 const { slug } = Astro.params;
-const currLocale = getLocale(Astro.currentLocale);
 
 let product = null;
 try {
-	const productId = `${appConfig.businessId}:${currLocale}:${slug}`;
-	const productRes = await fetch(`${appConfig.apiUrl}/v1/businesses/${appConfig.businessId}/products/${productId}`);
-
-	if (!productRes.ok) {
-		throw new Error(`Failed to fetch product: ${productRes.status} ${productRes.statusText}`);
-	}
-
-	product = await productRes.json();
+	product = await arky.eshop.getProduct({ id: slug });
 } catch (error) {
 	console.error('Error fetching product:', error);
 	// Return 404 if product not found
@@ -57,7 +49,7 @@ try {
 }
 
 const websiteCollection = await arky.cms.getCollection({ id: "website" });
-const siteData = getBlockFromArray(websiteCollection, "info", currLocale);
+const siteData = websiteCollection.getBlock("info");
 
 // Extract title string (handle multilingual objects)
 const siteTitle = typeof siteData.title === 'string' ? siteData.title : (siteData.title?.en || siteData.title?.[Object.keys(siteData.title || {})[0]] || 'Site');

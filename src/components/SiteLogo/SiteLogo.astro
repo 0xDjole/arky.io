@@ -1,12 +1,10 @@
 ---
 import { Image } from "astro:assets";
-import { arky, getImageUrl, getBlockFromArray } from "@lib/index";
-import { getLocale, getRelativeLocaleUrl } from "@lib/i18n";
+import { arky, getImageUrl } from "@lib/index";
+import { getRelativeLocaleUrl } from "@lib/i18n";
 
-const currLocale = getLocale(Astro.currentLocale);
 const websiteCollection = await arky.cms.getCollection({ id: "website" });
-
-const siteData = getBlockFromArray(websiteCollection, "info", currLocale);
+const siteData = websiteCollection.getBlock("info");
 const logo = siteData.logo;
 const logoUrl = getImageUrl(logo);
 ---
