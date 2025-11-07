@@ -5,9 +5,9 @@ import Switch from "@components/Switch";
 import { arky, getBlockObjectValues } from "@lib/index";
 import { getLocale } from "@lib/i18n";
 
-const websiteCollection = await arky.cms.getCollection({ id: "website" });
-
 const currLocale = getLocale(Astro.currentLocale);
+arky.setLocale(currLocale);
+const websiteCollection = await arky.cms.getCollection({ id: "website" });
 const pricingData = getBlockObjectValues(websiteCollection, "pricing_plans", currLocale);
 ---
 

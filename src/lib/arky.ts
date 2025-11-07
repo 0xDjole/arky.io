@@ -12,6 +12,7 @@ export const arky = createArkySDK({
 	storageUrl: STORAGE_URL,
 	businessId: appConfig.businessId,
 	market: "us",
+	locale: "en",
 	autoGuest: typeof window !== "undefined",
 
 	getToken: () => {

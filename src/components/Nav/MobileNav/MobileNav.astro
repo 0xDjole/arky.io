@@ -8,6 +8,7 @@ import { arky, getBlockObjectValues } from "@lib/index";
 import { getLocale, locales } from "@lib/i18n";
 
 const currLocale = getLocale(Astro.currentLocale);
+arky.setLocale(currLocale);
 const websiteCollection = await arky.cms.getCollection({ id: "website" });
 const navData = getBlockObjectValues(websiteCollection, "navigation_items", currLocale);
 ---

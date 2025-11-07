@@ -30,9 +30,9 @@ const { slug } = Astro.params;
 const serviceRes = await fetch(`${appConfig.apiUrl}/v1/businesses/${appConfig.businessId}/services/${slug}`);
 const service = await serviceRes.json();
 
-const websiteCollection = await arky.cms.getCollection({ id: "website" });
-
 const currLocale = getLocale(Astro.currentLocale);
+arky.setLocale(currLocale);
+const websiteCollection = await arky.cms.getCollection({ id: "website" });
 const siteData = getBlockFromArray(websiteCollection, "info", currLocale);
 
 // Extract strings (handle multilingual objects)

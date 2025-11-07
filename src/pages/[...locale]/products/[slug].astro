@@ -1,14 +1,14 @@
 ---
 import BaseLayout from "@layouts/BaseLayout.astro";
 import ProductDetail from "@lib/EShop/ProductDetail/index.svelte";
-import { arky, getBlockFromArray } from "@lib/index";
+import { arky, getBlockFromArray, getImageUrl } from "@lib/index";
 import { defaultLocale, getLocale, locales } from "@lib/i18n";
 import appConfig from "../../../appConfig";
 
 export async function getStaticPaths() {
 	try {
 		const res = await fetch(`${appConfig.apiUrl}/v1/businesses/${appConfig.businessId}/products?status=ACTIVE&limit=100`);
-		
+
 		if (!res.ok) {
 			console.error('Failed to fetch products:', res.status, res.statusText);
 			return [];
@@ -37,11 +37,11 @@ const { slug } = Astro.params;
 let product = null;
 try {
 	const productRes = await fetch(`${appConfig.apiUrl}/v1/businesses/${appConfig.businessId}/products/slug/${appConfig.businessId}/${slug}`);
-	
+
 	if (!productRes.ok) {
 		throw new Error(`Failed to fetch product: ${productRes.status} ${productRes.statusText}`);
 	}
-	
+
 	product = await productRes.json();
 } catch (error) {
 	console.error('Error fetching product:', error);
@@ -49,9 +49,9 @@ try {
 	return Astro.redirect("/404");
 }
 
-const websiteCollection = await arky.cms.getCollection({ id: "website" });
-
 const currLocale = getLocale(Astro.currentLocale);
+arky.setLocale(currLocale);
+const websiteCollection = await arky.cms.getCollection({ id: "website" });
 const siteData = getBlockFromArray(websiteCollection, "info", currLocale);
 
 // Extract title string (handle multilingual objects)

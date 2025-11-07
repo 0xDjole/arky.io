@@ -14,9 +14,8 @@ export function getStaticPaths() {
 	}));
 }
 
-const websiteCollection = await arky.cms.getCollection({ id: "website" });
-
 const currLocale = getLocaleFromUrl(Astro.url);
+const websiteCollection = await arky.cms.getCollection({ id: "website" });
 const siteData = getBlockFromArray(websiteCollection, "info", currLocale);
 
 // Extract strings (handle multilingual objects)

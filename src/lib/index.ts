@@ -20,4 +20,15 @@ export const extractBlockValues = arky.utils.extractBlockValues;
 export const getImageUrl = arky.utils.getImageUrl;
 
 // arky.io-specific utilities
-export { getGalleryThumbnail, getFirstGalleryMedia } from './utils/gallery';
+export { getGalleryThumbnail, getFirstGalleryMedia } from "./utils/gallery";
+
+/**
+ * Helper function to format collection query with business ID and locale
+ * Converts "website" to "business_id:locale:website" format for slug queries
+ * @param slug - The collection slug (e.g., "website")
+ * @param locale - The locale code (e.g., "en", "sr-latn")
+ * @returns Formatted query string "business_id:locale:slug"
+ */
+export function formatCollectionQuery(slug: string, locale: string = "en"): string {
+	return `${appConfig.businessId}:${locale}:${slug}`;
+}

@@ -7,6 +7,7 @@ import Footer from "@components/Footer/Footer.astro";
 import "@/styles/global.css";
 
 import { getLocale } from "@lib/i18n";
+import { arky } from "@lib/arky";
 
 interface Props {
 	type?: "blog" | "general";
@@ -29,6 +30,9 @@ const {
 } = Astro.props as Props;
 
 const currLocale = getLocale(Astro.currentLocale);
+
+// Sync SDK locale with current page locale
+arky.setLocale(currLocale);
 ---
 
 <!doctype html>
@@ -52,47 +56,56 @@ const currLocale = getLocale(Astro.currentLocale);
 			</main>
 		</div>
 		<Footer />
-		
+
 		<!-- Toast notifications -->
 		<div id="toast-container"></div>
-		
+
 		<!-- Floating cart -->
 		<div id="floating-cart-container"></div>
 
 		<!-- GSAP animations handled in BaseHead -->
-		
+
 		<!-- Toast notifications -->
 		<script>
 			import { mount } from "svelte";
 			import Toast from "@components/Toast/Toast.svelte";
 			import FloatingCart from "@lib/Cart/FloatingCart.svelte";
-			
+			import { arky } from "@lib/arky";
+			import { getLocaleFromUrl } from "@lib/i18n";
+
 			// Mount toast component
 			let toastComponent;
 			let floatingCartComponent;
-			
+
 			function mountToast() {
 				const container = document.getElementById('toast-container');
 				if (container && !toastComponent) {
 					toastComponent = mount(Toast, { target: container });
 				}
 			}
-			
+
 			function mountFloatingCart() {
 				const container = document.getElementById('floating-cart-container');
 				if (container && !floatingCartComponent) {
 					floatingCartComponent = mount(FloatingCart, { target: container });
 				}
 			}
-			
+
+			function syncLocale() {
+				const locale = getLocaleFromUrl(new URL(window.location.href));
+				arky.setLocale(locale);
+			}
+
 			// Mount on initial load
 			mountToast();
 			mountFloatingCart();
-			
+			syncLocale();
+
 			// Mount after view transitions
 			document.addEventListener("astro:after-swap", () => {
 				mountToast();
 				mountFloatingCart();
+				syncLocale();
 			});
 		</script>
 	</body>
