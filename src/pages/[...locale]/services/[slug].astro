@@ -31,12 +31,9 @@ export async function getStaticPaths() {
 }
 
 const { slug } = Astro.params;
-
-const serviceRes = await fetch(`${appConfig.apiUrl}/v1/businesses/${appConfig.businessId}/services/${slug}`);
-const service = await serviceRes.json();
-
 const currLocale = getLocale(Astro.currentLocale);
-arky.setLocale(currLocale);
+
+const service = await arky.reservation.getService({ id: slug });
 const websiteCollection = await arky.cms.getCollection({ id: "website" });
 const siteData = getBlockFromArray(websiteCollection, "info", currLocale);
 

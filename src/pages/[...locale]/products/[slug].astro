@@ -55,7 +55,7 @@ try {
 	// Return 404 if product not found
 	return Astro.redirect("/404");
 }
-arky.setLocale(currLocale);
+
 const websiteCollection = await arky.cms.getCollection({ id: "website" });
 const siteData = getBlockFromArray(websiteCollection, "info", currLocale);
 

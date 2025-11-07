@@ -23,9 +23,6 @@ export function getStaticPaths() {
 
 const { locale = defaultLocale } = Astro.props;
 
-// Set SDK locale before making API calls
-arky.setLocale(locale);
-
 const websiteCollection = await arky.cms.getCollection({ id: "website" });
 
 const siteData = getBlockFromArray(websiteCollection, "info", locale);

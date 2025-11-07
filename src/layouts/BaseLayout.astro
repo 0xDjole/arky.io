@@ -30,8 +30,6 @@ const {
 } = Astro.props as Props;
 
 const currLocale = getLocale(Astro.currentLocale);
-
-// Sync SDK locale with current page locale
 arky.setLocale(currLocale);
 ---
 
