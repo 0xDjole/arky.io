@@ -15,7 +15,7 @@ arky.setLocale(currLocale);
 
 // Fetch website metadata for BaseHead
 const websiteCollection = await arky.cms.getCollection({ id: "website" });
-const siteData = websiteCollection.getBlock("info", currLocale);
+const siteData = websiteCollection.getBlock("info");
 
 // Extract multilingual site info
 const siteTitle = typeof siteData.title === 'string' 

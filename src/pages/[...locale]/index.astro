@@ -9,10 +9,12 @@ import Testimonials from "@components/Testimonials/index.astro";
 import Pricing from "@components/Pricing/index.astro";
 import Faq from "@components/Faq/index.astro";
 import ContactForm from "@components/Forms/ContactForm.svelte";
-import { defaultLocale, locales } from "@lib/i18n";
+import { defaultLocale } from "@lib/i18n";
+import { getSupportedLocales } from "@lib/supportedLocales";
 
-export function getStaticPaths() {
-	return locales.map((locale) => ({
+export async function getStaticPaths() {
+	const supportedLocales = await getSupportedLocales();
+	return supportedLocales.map((locale) => ({
 		params: {
 			locale: locale === defaultLocale ? undefined : locale,
 		},

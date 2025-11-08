@@ -16,7 +16,8 @@ export async function getStaticPaths() {
 
 	return items.flatMap((service) =>
 		locales.map((locale) => {
-			const slug = service.seo?.slug?.[locale] || service.seo?.slug?.en;
+			const slug = service.seo?.slug?.[locale];
+			// Skip if no slug for this specific locale
 			if (!slug) return null;
 
 			return {
