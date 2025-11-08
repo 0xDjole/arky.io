@@ -9,41 +9,31 @@ import "@/styles/global.css";
 import { getLocale } from "@lib/i18n";
 import { arky } from "@lib/arky";
 
-interface Props {
-	type?: "blog" | "general";
-	title: string;
-	description: string;
-	heroImage?: ImageMetadata;
-	authorsData?: CollectionEntry<"authors">[];
-	postFrontmatter?: CollectionEntry<"blog">["data"];
-	noindex?: boolean;
-}
-
-const {
-	type = "general",
-	title,
-	description,
-	heroImage,
-	authorsData,
-	postFrontmatter,
-	noindex = false,
-} = Astro.props as Props;
-
+// Set locale - that's all BaseLayout does
 const currLocale = getLocale(Astro.currentLocale);
 arky.setLocale(currLocale);
+
+// Fetch website metadata for BaseHead
+const websiteCollection = await arky.cms.getCollection({ id: "website" });
+const siteData = websiteCollection.getBlock("info", currLocale);
+
+// Extract multilingual site info
+const siteTitle = typeof siteData.title === 'string' 
+	? siteData.title 
+	: (siteData.title?.[currLocale] || siteData.title?.en || siteData.title?.[Object.keys(siteData.title || {})[0]] || 'Site');
+
+const siteDescription = typeof siteData.description === 'string'
+	? siteData.description
+	: (siteData.description?.[currLocale] || siteData.description?.en || siteData.description?.[Object.keys(siteData.description || {})[0]] || '');
 ---
 
 <!doctype html>
 <html lang={currLocale} class="use-animations" transition:animate="fade">
 	<head>
 		<BaseHead
-			type={type}
-			title={title}
-			description={description}
-			image={heroImage ? heroImage : undefined}
-			authors={authorsData ? authorsData : undefined}
-			postFrontmatter={postFrontmatter ? postFrontmatter : undefined}
-			noindex={noindex}
+			type="general"
+			title={siteTitle}
+			description={siteDescription}
 		/>
 	</head>
 	<body id="body" class="">

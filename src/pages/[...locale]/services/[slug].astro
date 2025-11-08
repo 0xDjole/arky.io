@@ -33,14 +33,8 @@ export async function getStaticPaths() {
 const { slug } = Astro.params;
 
 const service = await arky.reservation.getService({ id: slug });
-const websiteCollection = await arky.cms.getCollection({ id: "website" });
-const siteData = websiteCollection.getBlock("info");
-
-// Extract strings (handle multilingual objects)
-const siteTitle = typeof siteData.title === 'string' ? siteData.title : (siteData.title?.en || siteData.title?.[Object.keys(siteData.title || {})[0]] || 'Site');
-const siteDescription = typeof siteData.description === 'string' ? siteData.description : (siteData.description?.en || siteData.description?.[Object.keys(siteData.description || {})[0]] || '');
 ---
 
-<BaseLayout title={siteTitle} description={siteDescription}>
+<BaseLayout>
 	<Service client:load service={service} />
 </BaseLayout>

@@ -47,14 +47,8 @@ try {
 	// Return 404 if product not found
 	return Astro.redirect("/404");
 }
-
-const websiteCollection = await arky.cms.getCollection({ id: "website" });
-const siteData = websiteCollection.getBlock("info");
-
-// Extract title string (handle multilingual objects)
-const siteTitle = typeof siteData.title === 'string' ? siteData.title : (siteData.title?.en || siteData.title?.[Object.keys(siteData.title || {})[0]] || 'Site');
 ---
 
-<BaseLayout title={`${product.name} - ${siteTitle}`} description={product.description}>
+<BaseLayout>
 	<ProductDetail {product} client:load />
 </BaseLayout>

@@ -1,7 +1,5 @@
 ---
 import BaseLayout from "@layouts/BaseLayout.astro";
-
-import { arky } from "@lib/index";
 import UnifiedCart from "@lib/Cart/Cart.svelte";
 import { defaultLocale, locales } from "@lib/i18n";
 
@@ -13,14 +11,8 @@ export function getStaticPaths() {
 		props: { locale },
 	}));
 }
-
-const websiteCollection = await arky.cms.getCollection({ id: "website" });
-const siteData = websiteCollection.getBlock("info");
-
-// Extract title string (handle multilingual objects)
-const siteTitle = typeof siteData.title === 'string' ? siteData.title : (siteData.title?.en || siteData.title?.[Object.keys(siteData.title || {})[0]] || 'Site');
 ---
 
-<BaseLayout title={`Cart - ${siteTitle}`} description="Your shopping cart">
+<BaseLayout>
 	<UnifiedCart client:load />
 </BaseLayout>
