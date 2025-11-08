@@ -1,16 +1,9 @@
 ---
 import BaseLayout from "@layouts/BaseLayout.astro";
-import { defaultLocale } from "@lib/i18n";
-import { getSupportedLocales } from "@lib/supportedLocales";
+import { getStaticPathsForLocales } from "@lib/getLocalesFromSlugs";
 
 export async function getStaticPaths() {
-	const supportedLocales = await getSupportedLocales();
-	return supportedLocales.map((locale) => ({
-		params: {
-			locale: locale === defaultLocale ? undefined : locale,
-		},
-		props: { locale },
-	}));
+	return await getStaticPathsForLocales();
 }
 
 const { locale = defaultLocale } = Astro.props;
