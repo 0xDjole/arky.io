@@ -2,7 +2,7 @@
 	import { onMount, tick } from 'svelte';
 	import { showToast } from '@lib/toast.js';
 	import { cartItems, cartTotal, cartItemCount, store, actions, initEshopStore, currency, allowedPaymentMethods, orderBlocks as businessOrderBlocks, paymentConfig, quoteAtom } from '@lib/core/stores/eshop';
-	import { getShippingMethodsForCountry } from '@lib/core/stores/business';
+	import { getShippingMethodsForCountry, selectedMarket } from '@lib/core/stores/business';
 	import { arky } from '@lib/index';
 	import QuantitySelector from '@lib/EShop/QuantitySelector/index.svelte';
 	import AttributeBlocks from '@lib/EShop/AttributeBlocks/index.svelte';
@@ -356,9 +356,9 @@ async function handleApplyPromoCode(code: string) {
 							<div>
 								<h4 class="text-lg font-semibold mb-3">Shipping</h4>
 								<div class="grid gap-3">
-									{#each availableShippingMethods as method}
-										{@const marketId = $store?.businessId ? 'us' : 'us'}
-										{@const price = method.prices?.find(p => p.market === marketId) || method.prices?.[0]}
+								{#each availableShippingMethods as method}
+										{@const market = $selectedMarket}
+										{@const price = method.prices?.find(p => p.market === market?.id)}
 										{@const rate = price?.amount || 0}
 										{@const freeThreshold = price?.freeThreshold || 0}
 										<label class="flex items-center gap-3 p-3 border rounded-lg cursor-pointer">
