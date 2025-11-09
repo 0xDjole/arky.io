@@ -79,14 +79,6 @@ export interface Location {
 	coordinates?: { lat: number; lon: number } | null;
 }
 
-// Zone structure (logistics grouping - countries, tax rates, shipping methods)
-export interface Zone {
-	id: string;
-	name: string;
-	countries: string[]; // Empty array = "All Countries"
-	taxBps: number;
-	shippingMethods: ShippingMethod[];
-}
 
 // Cart types
 export interface EshopCartItem {
@@ -130,7 +122,9 @@ export interface Market {
 	currency: string;
 	taxMode: "INCLUSIVE" | "EXCLUSIVE";
 	taxBps: number;
+	countries: string[]; // ISO-2 country codes, or ["*"] for global
 	paymentMethods: BusinessPaymentMethod[];
+	shippingMethods: ShippingMethod[];
 }
 
 export interface ShippingMethod {
@@ -151,7 +145,6 @@ export interface BusinessConfig {
 	orderBlocks?: any[];
 	reservationBlocks?: any[];
 	markets?: Market[];
-	zones?: Zone[];
 	paymentProvider?: PaymentProviderConfig;
 	aiProvider?: any;
 }

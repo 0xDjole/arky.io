@@ -9,41 +9,37 @@
 	import SelectInput from './SelectInput.svelte';
 	import CheckboxInput from './CheckboxInput.svelte';
 import RangeInput from './RangeInput.svelte';
-import { zones } from '../core/stores/business';
+import { countries } from 'countries-list';
+import { selectedMarket } from '../core/stores/business';
 
-// Minimal ISO country list for the Location block
-const COUNTRIES = [
-    { iso: 'BA', name: 'Bosnia and Herzegovina' },
-    { iso: 'RS', name: 'Serbia' },
-    { iso: 'HR', name: 'Croatia' },
-    { iso: 'US', name: 'United States' },
-    { iso: 'DE', name: 'Germany' },
-    { iso: 'GB', name: 'United Kingdom' },
-    { iso: 'FR', name: 'France' },
-    { iso: 'IT', name: 'Italy' },
-    { iso: 'ES', name: 'Spain' },
-    { iso: 'NL', name: 'Netherlands' },
-    { iso: 'CH', name: 'Switzerland' },
-    { iso: 'AT', name: 'Austria' }
-];
+// Build complete country list from countries-list package
+const ALL_COUNTRIES = Object.entries(countries)
+    .map(([iso, data]) => ({
+        iso: iso,
+        name: data.name
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 
 function countryNameFor(iso: string): string {
-    const c = COUNTRIES.find((c) => c.iso.toUpperCase() === (iso || '').toUpperCase());
+    const c = ALL_COUNTRIES.find((c) => c.iso.toUpperCase() === (iso || '').toUpperCase());
     return c ? c.name : (iso || '');
 }
 
-// Reactive list of available country codes based on zones (empty zones = all)
+// Available countries based on selected market
 let countryCodes = $derived.by(() => {
-    const z = $zones || [];
-    const set = new Set<string>();
-    let hasEmpty = false;
-    for (const zone of z) {
-        if (!zone.countries || zone.countries.length === 0) { hasEmpty = true; break; }
-        zone.countries.forEach(c => set.add((c || '').toUpperCase()));
+    const market = $selectedMarket;
+    if (!market || !market.countries) {
+        // No market selected, show all countries
+        return ALL_COUNTRIES.map(c => c.iso);
     }
-    const list = hasEmpty || set.size === 0 ? COUNTRIES.map(c => c.iso) : Array.from(set);
-    list.sort();
-    return list;
+    
+    // If market has wildcard, show all countries
+    if (market.countries.includes('*')) {
+        return ALL_COUNTRIES.map(c => c.iso);
+    }
+    
+    // Otherwise show only countries from market
+    return market.countries;
 });
 
 	// Props

@@ -5,7 +5,6 @@ import { arky } from "@lib/index";
 import type {
 	Business,
 	Market,
-	Zone,
 	ShippingMethod,
 	BusinessPaymentMethod,
 	PaymentProviderConfig,
@@ -42,27 +41,25 @@ export const markets = computed(businessStore, (state) => {
 	return state.data.configs.markets;
 });
 
-export const zones = computed(businessStore, (state) => {
-	if (!state.data?.configs?.zones) return [];
-	return state.data.configs.zones;
-});
-
-// Get zone by country code
-export const getZoneByCountry = (countryCode: string): Zone | null => {
-	const allZones = zones.get();
+// Get market by country code (supports wildcard "*" for global markets)
+export const getMarketByCountry = (countryCode: string): Market | null => {
+	const allMarkets = markets.get();
+	const upperCode = countryCode.toUpperCase();
+	
+	// Find market that contains this country or has wildcard
 	return (
-		allZones.find(
-			(zone) =>
-				zone.countries.length === 0 || // Empty = all countries
-				zone.countries.includes(countryCode.toUpperCase()),
+		allMarkets.find(
+			(market) =>
+				market.countries?.includes('*') || // Wildcard = all countries
+				market.countries?.includes(upperCode)
 		) || null
 	);
 };
 
-// Get shipping methods for a specific country
+// Get shipping methods for a specific country (from market)
 export const getShippingMethodsForCountry = (countryCode: string): ShippingMethod[] => {
-	const zone = getZoneByCountry(countryCode);
-	return zone?.shippingMethods || [];
+	const market = getMarketByCountry(countryCode);
+	return market?.shippingMethods || [];
 };
 
 export const paymentMethods = computed(selectedMarket, (market) => {

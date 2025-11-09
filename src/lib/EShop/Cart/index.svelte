@@ -2,7 +2,7 @@
 	import { onMount, tick } from 'svelte';
 	import { showToast } from '@lib/toast.js';
 	import { cartItems, cartTotal, cartItemCount, store, actions, initEshopStore, currency, allowedPaymentMethods, orderBlocks as businessOrderBlocks, paymentConfig, quoteAtom } from '@lib/core/stores/eshop';
-	import { getShippingMethodsForCountry, zones } from '@lib/core/stores/business';
+	import { getShippingMethodsForCountry } from '@lib/core/stores/business';
 	import { arky } from '@lib/index';
 	import QuantitySelector from '@lib/EShop/QuantitySelector/index.svelte';
 	import AttributeBlocks from '@lib/EShop/AttributeBlocks/index.svelte';
