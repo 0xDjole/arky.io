@@ -108,7 +108,7 @@ function formatLinePrice(item) {
 async function handleApplyPromoCode(code: string) {
     const candidate = (code || '').trim();
     if (!candidate) return;
-    await actions.fetchQuote(candidate);
+    await actions.fetchQuote(candidate, orderBlocks);
     const err = $store.quoteError;
     if (!err) {
         appliedPromoCode = candidate;
@@ -121,7 +121,7 @@ async function handleApplyPromoCode(code: string) {
 
 	function handleRemovePromoCode() {
 		appliedPromoCode = null;
-		actions.fetchQuote(null);
+		actions.fetchQuote(null, orderBlocks);
 		showToast('Promo code removed', 'success', 2000);
 	}
 
@@ -134,7 +134,7 @@ async function handleApplyPromoCode(code: string) {
 			const _promo = appliedPromoCode;
 			const _location = orderBlocks.find(b => b.key === 'location')?.value;
 
-			actions.fetchQuote(appliedPromoCode);
+			actions.fetchQuote(appliedPromoCode, orderBlocks);
 		}
 	});
 

@@ -25,21 +25,21 @@ function countryNameFor(iso: string): string {
     return c ? c.name : (iso || '');
 }
 
-// Available countries based on selected market
+// Available countries based on selected market zones
 let countryCodes = $derived.by(() => {
     const market = $selectedMarket;
-    if (!market || !market.countries) {
-        // No market selected, show all countries
+    if (!market || !market.zones) {
+        // No market selected or no zones configured
+        return [];
+    }
+    
+    // If market has a global wildcard zone, show all countries
+    if ((market.zones || []).some(z => z.code === '*')) {
         return ALL_COUNTRIES.map(c => c.iso);
     }
     
-    // If market has wildcard, show all countries
-    if ((market.countries || []).some(c => c.code === '*')) {
-        return ALL_COUNTRIES.map(c => c.iso);
-    }
-    
-    // Otherwise show only countries from market
-    return (market.countries || []).map(c => c.code);
+    // Otherwise show only countries from configured zones
+    return (market.zones || []).map(z => z.code);
 });
 
 	// Props

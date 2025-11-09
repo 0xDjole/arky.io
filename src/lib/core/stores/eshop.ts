@@ -333,7 +333,7 @@ export const actions = {
     },
 
     // Fetch quote from backend
-    async fetchQuote(promoCode?: string | null): Promise<void> {
+    async fetchQuote(promoCode?: string | null, providedOrderBlocks?: any[]): Promise<void> {
         const items = cartItems.get();
         const market = selectedMarket.get();
         const currencyCode = currency.get();
@@ -356,6 +356,19 @@ export const actions = {
 
             const shippingMethodId = state.selectedShippingMethodId || undefined;
 
+            // Extract location from orderBlocks if available
+            const blocks = providedOrderBlocks || orderBlocks.get() || [];
+            const locationBlock = blocks.find(b => b.key === 'location' && b.type === 'GEO_LOCATION');
+            const firstLoc = Array.isArray(locationBlock?.value) ? locationBlock?.value?.[0] : locationBlock?.value;
+            const location = firstLoc ? {
+                country: firstLoc.country || null,
+                address: firstLoc.address || null,
+                city: firstLoc.city || null,
+                postalCode: firstLoc.postalCode || null,
+                countryCode: firstLoc.countryCode || null,
+                coordinates: firstLoc.coordinates || null
+            } : undefined;
+
             const response = await arky.eshop.getQuote({
                 items: items.map(item => ({
                     productId: item.productId,
@@ -366,6 +379,7 @@ export const actions = {
                 paymentMethod: PaymentMethod.Cash,
                 shippingMethodId,
                 promoCode: promo || undefined,
+                location,
             });
 
             if (response) {

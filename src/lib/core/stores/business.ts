@@ -41,7 +41,7 @@ export const markets = computed(businessStore, (state) => {
 	return state.data.configs.markets;
 });
 
-// Get market by country code (supports wildcard "*" for global markets)
+// Get market by country code (supports wildcard "*" for global zones)
 export const getMarketByCountry = (countryCode: string): Market | null => {
 	const allMarkets = markets.get();
 	const upperCode = countryCode.toUpperCase();
@@ -49,21 +49,31 @@ export const getMarketByCountry = (countryCode: string): Market | null => {
 	return (
 		allMarkets.find(
 			(market) =>
-				(market.countries || []).some(c => c.code === '*' || c.code.toUpperCase() === upperCode)
+				(market.zones || []).some(z => z.code === '*' || z.code.toUpperCase() === upperCode)
 		) || null
 	);
 };
 
-// Get shipping methods for a specific country (from market)
+// Get shipping methods for a specific country (from market's shipping methods filtered by zone)
 export const getShippingMethodsForCountry = (countryCode: string): ShippingMethod[] => {
 	const market = getMarketByCountry(countryCode);
-	return market?.shippingMethods || [];
+	if (!market) return [];
+	
+	// Find the zone for this country
+	const upperCode = countryCode.toUpperCase();
+	const zone = market.zones?.find(z => z.code === upperCode || z.code === '*');
+	if (!zone) return [];
+	
+	// Return shipping methods from market that are enabled in this zone
+	const availableMethodIds = zone.shippingMethodIds || [];
+	return (market.shippingMethods || []).filter(sm => availableMethodIds.includes(sm.id));
 };
 
 export const paymentMethods = computed(selectedMarket, (market) => {
-	if (!market) return ["CASH"];
+	if (!market) return [PaymentMethod.Cash];
+	// Get unique payment method types from all payment method configs
 	const methods = market.paymentMethods || [];
-	return methods.map((pm: any) => pm.method || pm);
+	return methods.map((pm: any) => pm.method);
 });
 
 export const paymentConfig = computed(businessStore, (state) => {
