@@ -125,14 +125,14 @@ async function handleApplyPromoCode(code: string) {
 		showToast('Promo code removed', 'success', 2000);
 	}
 
-	// Fetch quote when cart/shipping/promo changes
+	// Fetch quote when cart/shipping/promo/location changes
 	$effect(() => {
 		if ($cartItems.length > 0) {
-			// Re-fetch quote when cart items, shipping method, or promo code changes
-			// These reactive dependencies will trigger the effect
+			// Re-fetch quote when cart items, shipping method, location, or promo code changes
 			const _items = $cartItems;
 			const _shipping = selectedShippingMethodId;
 			const _promo = appliedPromoCode;
+			const _location = orderBlocks.find(b => b.key === 'location')?.value;
 
 			actions.fetchQuote(appliedPromoCode);
 		}

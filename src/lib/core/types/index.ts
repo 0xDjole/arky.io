@@ -116,13 +116,13 @@ export interface PaymentProviderConfig {
 }
 
 // Market types (business-owned) - camelCase for frontend
+export interface CountryConfig { code: string; taxBps: number }
 export interface Market {
 	id: string;
 	name: string;
 	currency: string;
 	taxMode: "INCLUSIVE" | "EXCLUSIVE";
-	taxBps: number;
-	countries: string[]; // ISO-2 country codes, or ["*"] for global
+	countries: CountryConfig[]; // Use { code, taxBps } per country; code "*" allowed
 	paymentMethods: BusinessPaymentMethod[];
 	shippingMethods: ShippingMethod[];
 }

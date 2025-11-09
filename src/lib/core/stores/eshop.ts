@@ -189,7 +189,8 @@ export const actions = {
 
             // Extract country code from location block
             const locationBlock = blocks.find(b => b.key === 'location' && b.type === 'GEO_LOCATION');
-            const countryCode = locationBlock?.value?.[0]?.countryCode;
+            const firstLoc = Array.isArray(locationBlock?.value) ? locationBlock?.value?.[0] : locationBlock?.value;
+            const countryCode = firstLoc?.countryCode || '';
 
             if (!countryCode) {
                 throw new Error("Country is required for checkout");
@@ -211,11 +212,24 @@ export const actions = {
                 throw new Error("No shipping method available");
             }
 
+            // Convert location block to snake_case for backend
+            const normalizedBlocks = blocks.map((b) => {
+                if (b.key === 'location' && b.type === 'GEO_LOCATION') {
+                    const values = Array.isArray(b.value) ? b.value : [b.value];
+                    const snakeCaseValues = values.map((loc: any) => ({
+                        ...loc,
+                        country_code: loc.countryCode,
+                    }));
+                    return { ...b, value: snakeCaseValues } as Block;
+                }
+                return b;
+            });
+
             const promo = promoCode !== undefined ? promoCode : promoCodeAtom.get();
             const response = await arky.eshop.checkout({
                 items: orderItems,
                 paymentMethod: paymentMethod,
-                blocks,
+                blocks: normalizedBlocks,
                 shippingMethodId: shippingMethod.id,
                 promoCode: promo || undefined,
             }, {

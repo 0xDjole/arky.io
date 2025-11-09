@@ -34,12 +34,12 @@ let countryCodes = $derived.by(() => {
     }
     
     // If market has wildcard, show all countries
-    if (market.countries.includes('*')) {
+    if ((market.countries || []).some(c => c.code === '*')) {
         return ALL_COUNTRIES.map(c => c.iso);
     }
     
     // Otherwise show only countries from market
-    return market.countries;
+    return (market.countries || []).map(c => c.code);
 });
 
 	// Props

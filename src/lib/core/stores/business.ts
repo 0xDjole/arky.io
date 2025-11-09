@@ -46,12 +46,10 @@ export const getMarketByCountry = (countryCode: string): Market | null => {
 	const allMarkets = markets.get();
 	const upperCode = countryCode.toUpperCase();
 	
-	// Find market that contains this country or has wildcard
 	return (
 		allMarkets.find(
 			(market) =>
-				market.countries?.includes('*') || // Wildcard = all countries
-				market.countries?.includes(upperCode)
+				(market.countries || []).some(c => c.code === '*' || c.code.toUpperCase() === upperCode)
 		) || null
 	);
 };
