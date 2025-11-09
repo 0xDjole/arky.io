@@ -24,8 +24,8 @@ export const selectedMarket = computed(businessStore, (state) => {
 	if (!state.data?.configs?.markets) return null;
 
 	const markets = state.data.configs.markets;
-	// For arky website, always use 'us' market (hardcoded for headless)
-	return markets.find((m) => m.id === "us") || markets[0] || null;
+	// For arky website, always use 'us' market
+	return markets.find((m) => m.id === "us") || null;
 });
 
 export const currency = computed(selectedMarket, (market) => {
@@ -70,7 +70,7 @@ export const getShippingMethodsForCountry = (countryCode: string): ShippingMetho
 };
 
 export const paymentMethods = computed(selectedMarket, (market) => {
-	if (!market) return [PaymentMethod.Cash];
+	if (!market) return [];
 	// Get unique payment method types from all payment method configs
 	const methods = market.paymentMethods || [];
 	return methods.map((pm: any) => pm.method);

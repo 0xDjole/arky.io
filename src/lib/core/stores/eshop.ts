@@ -57,10 +57,11 @@ export const cartTotal = computed([cartItems, selectedMarket, currency], (items,
         return sum + (amountMinor * item.quantity);
     }, 0);
 
-    const marketId = market?.id || 'us';
-    const currencyCode = curr || 'USD';
+    if (!market?.id || !curr) {
+        throw new Error('Market and currency must be configured');
+    }
 
-    return arky.utils.createPaymentForCheckout(subtotalMinor, marketId, currencyCode, PaymentMethod.Cash);
+    return arky.utils.createPaymentForCheckout(subtotalMinor, market.id, curr, PaymentMethod.Cash);
 });
 
 export const cartItemCount = computed(cartItems, (items) => {
@@ -96,20 +97,24 @@ export const actions = {
             cartItems.set(updatedItems);
         } else {
             // Add new item with market-based pricing
-            let cartPrice: Price;
-
-            if (variant.prices && Array.isArray(variant.prices)) {
-                // Market-based pricing from backend (amounts are minor units)
-                const marketCode = market?.id || 'us';
-                const marketAmount = arky.utils.getPriceAmount(variant.prices, marketCode);
-                cartPrice = {
-                    amount: marketAmount ?? 0,
-                    market: marketCode
-                };
-            } else {
-                // Fallback
-                cartPrice = { amount: 0, market: market?.id || 'us' } as Price;
+            if (!variant.prices || !Array.isArray(variant.prices)) {
+                throw new Error('Product variant has no prices configured');
             }
+
+            if (!market?.id) {
+                throw new Error('No market selected');
+            }
+
+            // Market-based pricing from backend (amounts are minor units)
+            const marketAmount = arky.utils.getPriceAmount(variant.prices, market.id);
+            if (marketAmount === null || marketAmount === undefined) {
+                throw new Error(`No price configured for market: ${market.id}`);
+            }
+
+            const cartPrice: Price = {
+                amount: marketAmount,
+                market: market.id
+            };
 
             const newItem: EshopCartItem = {
                 id: crypto.randomUUID(),
@@ -305,10 +310,12 @@ export const actions = {
         const market = selectedMarket.get();
         const currencyCode = currency.get();
 
-        const marketId = market?.id || 'us';
+        if (!market?.id || !currencyCode) {
+            throw new Error('Market and currency must be configured');
+        }
 
         if (!items || items.length === 0) {
-            return arky.utils.createPaymentForCheckout(0, marketId, currencyCode, PaymentMethod.Cash);
+            return arky.utils.createPaymentForCheckout(0, market.id, currencyCode, PaymentMethod.Cash);
         }
 
         const subtotalMinor = items.reduce((sum, item) => {
@@ -319,12 +326,16 @@ export const actions = {
             return sum + (amountMinor * item.quantity);
         }, 0);
 
-        return arky.utils.createPaymentForCheckout(subtotalMinor, marketId, currencyCode, PaymentMethod.Cash);
+        return arky.utils.createPaymentForCheckout(subtotalMinor, market.id, currencyCode, PaymentMethod.Cash);
     },
 
     // Get available payment methods for selected market
     getAvailablePaymentMethods(): PaymentMethod[] {
-        return paymentMethods.get() || [PaymentMethod.Cash];
+        const methods = paymentMethods.get();
+        if (!methods || methods.length === 0) {
+            throw new Error('No payment methods configured for selected market');
+        }
+        return methods;
     },
 
     // Get shipping methods for a country code
