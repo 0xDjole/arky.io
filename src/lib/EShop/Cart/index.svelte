@@ -25,27 +25,20 @@
 	let formErrors = $state([]);
 	let paymentFormValid = $state(false);
 	let selectedShippingMethodId = $derived($store.selectedShippingMethodId);
-    // Deprecated: shipping form removed in favor of GeoLocation block in DynamicForm
 
-    // Get location block
     const locationBlock = $derived(orderBlocks.find((b) => b.key === 'location' && b.type === 'GEO_LOCATION'));
     const countryCode = $derived(locationBlock?.value?.[0]?.countryCode);
 
-    // Get available shipping methods based on Location block's country code
     const availableShippingMethods = $derived.by(() => {
         if (!countryCode) return [];
-        // Zone configuration determines which methods are available
-        // No need to filter by pickup location - if it's in the zone, it's available
         return getShippingMethodsForCountry(countryCode) || [];
     });
 
-    // Get available payment methods based on zone (country code)
     const availablePaymentMethods = $derived.by(() => {
         if (!countryCode) return [];
         return getPaymentMethodsForCountry(countryCode);
     });
 
-    // If location changes or methods list changes, clear selection if invalid
     $effect(() => {
         if (availableShippingMethods.length > 0 && selectedShippingMethodId) {
             const stillValid = availableShippingMethods.some(m => m.id === selectedShippingMethodId);
@@ -54,9 +47,6 @@
             }
         }
     });
-
-	// Update store location when shipping details change
-    // Removed: shippingLocation is now captured via DynamicForm 'location' block
 
 	function handleValidationChange(isValid, errors) {
 		formValid = isValid;
@@ -67,7 +57,6 @@
 		paymentFormValid = isValid;
 	}
 
-	// Combined validation - form must be valid, payment form only for credit card
 	const isCompletelyValid = $derived(formValid && (selectedPaymentMethod === 'CASH' || paymentFormValid));
 
 	async function handlePhoneSendCode(blockId, phone) {
@@ -80,7 +69,6 @@
 		return await actions.phoneNumberConfirm();
 	}
 
-// Format a single cart line price (handles both legacy and new price shapes)
 function formatLinePrice(item) {
 		const currencyValue = $currency;
 		if (item?.price && 'amount' in item.price) {
@@ -112,7 +100,6 @@ async function handleApplyPromoCode(code: string) {
     const candidate = (code || '').trim();
     if (!candidate) return;
 
-    // Temporarily set promo code and fetch quote
     const prevPromo = appliedPromoCode;
     appliedPromoCode = candidate;
     await actions.fetchQuote(candidate, orderBlocks);
@@ -121,7 +108,6 @@ async function handleApplyPromoCode(code: string) {
     if (!err) {
         showToast(`Promo code "${candidate}" applied`, 'success', 3000);
     } else {
-        // Revert on failure
         appliedPromoCode = prevPromo;
         showToast(err, 'error', 4000);
     }
@@ -133,7 +119,6 @@ async function handleApplyPromoCode(code: string) {
 		showToast('Promo code removed', 'success', 2000);
 	}
 
-	// Manually fetch quote when needed
 	function refreshQuote() {
 		if ($cartItems.length > 0 && orderBlocks.length > 0) {
 			actions.fetchQuote(appliedPromoCode, orderBlocks);
@@ -141,7 +126,6 @@ async function handleApplyPromoCode(code: string) {
 	}
 
 	async function handleCheckoutComplete() {
-		// Block submission if form is invalid
 		if (!isCompletelyValid) {
 			if (!formValid) {
 				showToast('Please fix the form errors before placing order', 'error', 4000);
@@ -155,16 +139,14 @@ async function handleApplyPromoCode(code: string) {
 		paymentError = null;
 
 		try {
-			// 1. First, create order (for both cash and credit card)
 			const checkoutResponse = await actions.checkout(selectedPaymentMethod, orderBlocks, appliedPromoCode);
-			
+
 			if (!checkoutResponse.success) {
 				throw new Error(checkoutResponse.error || 'Failed to create order');
 			}
 
 			const { orderId, clientSecret } = checkoutResponse.data;
 
-			// 2. For cash payments, we're done
 			if (selectedPaymentMethod === 'CASH') {
 				showToast('Order placed successfully! Pay on delivery.', 'success', 6000);
 				showCheckoutSection = false;
@@ -172,7 +154,6 @@ async function handleApplyPromoCode(code: string) {
 				return;
 			}
 
-			// 3. For credit card, confirm payment
 			if (selectedPaymentMethod === 'CREDIT_CARD') {
 				if (!confirmPayment) {
 					throw new Error('Payment system not ready');
@@ -195,23 +176,19 @@ async function handleApplyPromoCode(code: string) {
 				}
 			}
 
-			// Success - clean up and reset
 			showCheckoutSection = false;
 			checkoutFormData = {};
 			selectedPaymentMethod = 'CASH';
 			actions.clearCart();
 
 		} catch (error) {
-			// Try to parse structured error from backend
 			let errorMessage = 'Checkout failed. Please try again.';
 
 			if (error.message) {
 				try {
-					// If error.message is JSON string, parse it
 					const parsed = JSON.parse(error.message);
 					errorMessage = parsed.reason || parsed.error || error.message;
 				} catch {
-					// Not JSON, use as-is
 					errorMessage = error.message;
 				}
 			}
@@ -224,7 +201,6 @@ async function handleApplyPromoCode(code: string) {
 	}
 
 	onMount(() => {
-		// Initialize the eshop store to load order blocks
 		initEshopStore();
 	});
 
@@ -312,7 +288,6 @@ async function handleApplyPromoCode(code: string) {
 		{/each}
 	</div>
 
-	<!-- Checkout Section -->
 	{#if $cartItems.length > 0}
 		<div class="border-t pt-6 mt-4">
 			<h3 class="text-xl font-semibold text-card-foreground mb-6">Checkout</h3>
@@ -320,10 +295,6 @@ async function handleApplyPromoCode(code: string) {
 			<form on:submit|preventDefault={() => {
 				handleCheckoutComplete();
 			}} class="space-y-6">
-
-                        <!-- Shipping Address removed; use Location block in DynamicForm -->
-
-						<!-- Dynamic Customer Information Form -->
 						<DynamicForm
 							blocks={orderBlocks}
 							onUpdate={(idx, value) => {
@@ -342,7 +313,6 @@ async function handleApplyPromoCode(code: string) {
 							onValidationChange={handleValidationChange}
 						/>
 
-						<!-- Shipping Methods (unlocked after Location) -->
 						{#if availableShippingMethods && availableShippingMethods.length > 0}
 							<div>
 								<h4 class="text-lg font-semibold mb-3">Shipping</h4>
@@ -374,11 +344,8 @@ async function handleApplyPromoCode(code: string) {
 									{/each}
 								</div>
 							</div>
-						{:else}
-							<!-- No shipping until location provided -->
 						{/if}
 
-						<!-- Payment (only show after location selected) -->
 						{#if countryCode && availablePaymentMethods.length > 0}
 							<PaymentForm
 								allowedMethods={availablePaymentMethods}
@@ -392,14 +359,12 @@ async function handleApplyPromoCode(code: string) {
 							/>
 						{/if}
 
-						<!-- Promo Code -->
 						<PromoCode
 							{appliedPromoCode}
 							onApply={handleApplyPromoCode}
 							onRemove={handleRemovePromoCode}
 						/>
 
-						<!-- Order Summary -->
 						<QuoteSummary
 							quote={$quoteAtom}
 							fetchingQuote={$store.fetchingQuote}
@@ -411,7 +376,6 @@ async function handleApplyPromoCode(code: string) {
 							showShipping={true}
 						/>
 
-						<!-- Action Buttons -->
 						<div class="flex justify-center pt-4">
 							<button
 								type="submit"
