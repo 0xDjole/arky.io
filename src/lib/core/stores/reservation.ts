@@ -748,7 +748,6 @@ export const actions = {
                 parts: state.parts,
                 paymentMethod,
                 promoCode,
-                zoneId: "global",
             });
 
             return {
@@ -790,7 +789,6 @@ export const actions = {
                 parts: state.parts,
                 paymentMethod,
                 promoCode,
-                zoneId: "global",
             });
 
             console.log('Quote received:', result);

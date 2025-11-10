@@ -201,12 +201,6 @@ export const actions = {
                 throw new Error("Country is required for checkout");
             }
 
-            let zoneId = getZoneIdForCountry(countryCode);
-            if (!zoneId) {
-                zoneId = "global";
-            }
-
-            // Get available shipping methods for the country
             const availableShippingMethods = getShippingMethodsForCountry(countryCode) || [];
 
             if (!availableShippingMethods || availableShippingMethods.length === 0) {
@@ -243,7 +237,6 @@ export const actions = {
                 blocks: normalizedBlocks,
                 shippingMethodId: shippingMethod.id,
                 promoCode: promo || undefined,
-                zoneId: zoneId,
             }, {
                 onSuccess: onSuccess('Order placed successfully!'),
                 onError: onError('Failed to place order')
@@ -387,9 +380,9 @@ export const actions = {
                 coordinates: firstLoc.coordinates || null
             } : undefined;
 
-            // Get zoneId based on country (with global fallback)
-            const countryCode = firstLoc?.countryCode;
-            const zoneId = countryCode ? (getZoneIdForCountry(countryCode) || "global") : "global";
+            if (!location || !location.countryCode) {
+                throw new Error("Location with country code is required for quote");
+            }
 
             const response = await arky.eshop.getQuote({
                 items: items.map(item => ({
@@ -402,7 +395,6 @@ export const actions = {
                 shippingMethodId,
                 promoCode: promo || undefined,
                 location,
-                zoneId: zoneId,
             });
 
             if (response) {
