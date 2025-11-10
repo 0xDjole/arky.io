@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { onMount, tick, untrack } from 'svelte';
+	import { onMount, } from 'svelte';
 	import { showToast } from '@lib/toast.js';
-	import { cartItems, cartTotal, cartItemCount, store, actions, initEshopStore, currency, allowedPaymentMethods, orderBlocks as businessOrderBlocks, paymentConfig, quoteAtom } from '@lib/core/stores/eshop';
+	import { cartItems,  cartItemCount, store, actions, initEshopStore, currency, allowedPaymentMethods, orderBlocks as businessOrderBlocks, paymentConfig, quoteAtom } from '@lib/core/stores/eshop';
 	import { getShippingMethodsForCountry, getPaymentMethodsForCountry, selectedMarket } from '@lib/core/stores/business';
 	import { arky } from '@lib/index';
 	import QuantitySelector from '@lib/EShop/QuantitySelector/index.svelte';
