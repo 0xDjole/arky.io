@@ -12,7 +12,6 @@ import RangeInput from './RangeInput.svelte';
 import { countries } from 'countries-list';
 import { selectedMarket, zoneDefinitions } from '../core/stores/business';
 
-// Build complete country list from countries-list package
 const ALL_COUNTRIES = Object.entries(countries)
     .map(([iso, data]) => ({
         iso: iso,
@@ -20,13 +19,7 @@ const ALL_COUNTRIES = Object.entries(countries)
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
 
-function countryNameFor(iso: string): string {
-    const c = ALL_COUNTRIES.find((c) => c.iso.toUpperCase() === (iso || '').toUpperCase());
-    return c ? c.name : (iso || '');
-}
-
-// Available zones/countries based on selected market zones
-let availableOptions = $derived.by(() => {
+let availableCountries = $derived.by(() => {
     const market = $selectedMarket;
     const zones = $zoneDefinitions;
 
@@ -34,35 +27,37 @@ let availableOptions = $derived.by(() => {
         return [];
     }
 
-    // If market has a "global" zone, show all countries
-    const hasGlobalZone = market.zones.some(z => z.zoneId === 'global');
+    const relevantZoneIds = market.zones.map(mz => mz.zoneId);
+    const relevantZones = zones.filter(z => relevantZoneIds.includes(z.id));
+
+    const hasGlobalZone = relevantZones.some(z => z.countries.length === 0);
     if (hasGlobalZone) {
-        return ALL_COUNTRIES.map(c => ({ code: c.iso, name: c.name }));
+        return ALL_COUNTRIES;
     }
 
-    // Otherwise show zones with their names from zone definitions
-    return market.zones.map(mz => {
-        const zoneDef = zones.find(z => z.id === mz.zoneId);
-        return {
-            code: mz.zoneId,
-            name: zoneDef?.name || mz.zoneId
-        };
+    const uniqueCountryCodes = new Set<string>();
+    relevantZones.forEach(zone => {
+        zone.countries.forEach(countryCode => uniqueCountryCodes.add(countryCode));
     });
+
+    // Map ISO codes to full country objects
+    return Array.from(uniqueCountryCodes)
+        .map(iso => ALL_COUNTRIES.find(c => c.iso === iso))
+        .filter(c => c !== undefined)
+        .sort((a, b) => a.name.localeCompare(b.name));
 });
 
 	// Props
-	let { 
-		blocks = [], 
+	let {
+		blocks = [],
 		onUpdate = (idx: number, value: unknown) => {},
 		onPhoneSendCode = null,
 		onPhoneVerifyCode = null,
 		onValidationChange = (isValid: boolean, errors: any[]) => {}
 	} = $props();
 
-	// Get the current locale from the URL
 	let currLocale;
-	
-	// Initialize the locale when component mounts
+
 	onMount(() => {
 		const url = new URL(window.location.href);
 		currLocale = getLocaleFromUrl(url);
@@ -70,23 +65,20 @@ let availableOptions = $derived.by(() => {
 
 	function update(idx: number, v: unknown) {
 		onUpdate(idx, v);
-		// Trigger validation check after any update
 		setTimeout(validateAllFields, 0);
 	}
 
-	// Validation state
 	let validationErrors = $state([]);
 	let isFormValid = $state(false);
-	let phoneVerified = $state({}); // Track if phone is verified by blockId
+	let phoneVerified = $state({});
 
-	// Validate all fields and notify parent
 	function validateAllFields() {
 		const errors = [];
-		
+
 		blocks.forEach((block, idx) => {
 			const value = getBlockValue(block);
 			const error = getValidationError(block, value);
-			
+
 			if (error) {
 				const fieldLabel = getBlockLabel(block, currLocale) || block.key;
 				errors.push({
@@ -98,40 +90,33 @@ let availableOptions = $derived.by(() => {
 				});
 			}
 		});
-		
+
 		validationErrors = errors;
 		isFormValid = errors.length === 0;
-		
-		// Notify parent component
+
 		onValidationChange(isFormValid, errors);
-		
-		// Note: Removed automatic focus to prevent interference with PhoneInput component
 	}
 
-	// Run validation on mount and when blocks change
 	$effect(() => {
 		if (blocks.length > 0) {
 			validateAllFields();
 		}
 	});
 
-	// Helper function to get the string value from a block value
 	function getBlockValue(block: any): string {
 		if (!block.value || !block.value[0]) return '';
 		const val = block.value[0];
-		// For PHONE_NUMBER, EMAIL, URL blocks that have Vec<String> values
 		if (typeof val === 'string') return val;
-		// For TEXT blocks that have Vec<HashMap<String, String>> values
 		if (typeof val === 'object' && val.en !== undefined) return val.en || '';
 		return '';
 	}
 
-	// Geo helpers
 	function getGeo(block: any) {
 		return (block?.value?.[0]) || {
 			country: null,
 			address: null,
 			city: null,
+			state: null,
 			postalCode: null,
 			countryCode: null,
 			coordinates: null
@@ -145,32 +130,70 @@ let availableOptions = $derived.by(() => {
 		setTimeout(validateAllFields, 0);
 	}
 
-	// Helper function to update block value properly
+	function getAvailableStates(selectedCountry: string) {
+		const market = $selectedMarket;
+		const zones = $zoneDefinitions;
+
+		if (!market || !selectedCountry) return [];
+
+		const relevantZoneIds = market.zones.map(mz => mz.zoneId);
+		const relevantZones = zones.filter(z => relevantZoneIds.includes(z.id));
+
+		const matchingZones = relevantZones.filter(z =>
+			z.countries.length === 0 || z.countries.includes(selectedCountry)
+		);
+
+		const uniqueStates = new Set<string>();
+		matchingZones.forEach(zone => {
+			zone.states.forEach(state => uniqueStates.add(state));
+		});
+
+		return Array.from(uniqueStates).sort();
+	}
+
+	function getAvailableCities(selectedCountry: string, selectedState: string | null) {
+		const market = $selectedMarket;
+		const zones = $zoneDefinitions;
+
+		if (!market || !selectedCountry) return [];
+
+		const relevantZoneIds = market.zones.map(mz => mz.zoneId);
+		const relevantZones = zones.filter(z => relevantZoneIds.includes(z.id));
+
+		const matchingZones = relevantZones.filter(z => {
+			const countryMatch = z.countries.length === 0 || z.countries.includes(selectedCountry);
+			const stateMatch = !selectedState || z.states.length === 0 || z.states.includes(selectedState);
+			return countryMatch && stateMatch;
+		});
+
+		const uniqueCities = new Set<string>();
+		matchingZones.forEach(zone => {
+			zone.cities.forEach(city => uniqueCities.add(city));
+		});
+
+		return Array.from(uniqueCities).sort();
+	}
+
 	function updateBlockValue(idx: number, value: string) {
 		const block = blocks[idx];
-		// For PHONE_NUMBER, EMAIL blocks, use plain string (Vec<String>)
 		if (block.type === 'PHONE_NUMBER' || block.type === 'EMAIL') {
 			update(idx, value);
 		} else {
-			// For TEXT blocks, use { en: value } format (Vec<HashMap<String, String>>)
 			update(idx, { en: value });
 		}
 	}
 
-	// Helper function to check if field is required based on pattern
 	function isFieldRequired(block: any): boolean {
 		const pattern = block.properties?.pattern;
-		// All patterns make fields required except empty pattern
 		return !!pattern || block.properties?.isRequired;
 	}
 
-	// Helper function to validate pattern
 	function validatePattern(block: any, value: string): boolean {
 		if (!block.properties?.pattern) return true;
-		
+
 		const trimmedValue = value?.trim() || '';
-		if (!trimmedValue) return false; // Empty value fails validation if pattern exists
-		
+		if (!trimmedValue) return false;
+
 		try {
 			const regex = new RegExp(block.properties.pattern);
 			return regex.test(trimmedValue);
@@ -180,23 +203,20 @@ let availableOptions = $derived.by(() => {
 		}
 	}
 
-	// Helper function to get validation error message
 	function getValidationError(block: any, value: string): string {
 		const trimmedValue = value?.trim() || '';
-		
+
 		if (isFieldRequired(block) && !trimmedValue) {
 			return 'This field is required';
 		}
-		
-		// Phone validation - must be verified
+
 		if (block.type === 'PHONE_NUMBER' && trimmedValue) {
 			if (!phoneVerified[block.id]) {
 				return 'Please verify your phone number';
 			}
 		}
-		
+
 		if (trimmedValue && !validatePattern(block, trimmedValue)) {
-			// Return specific error messages based on pattern
 			const pattern = block.properties?.pattern;
 			if (pattern === '^.+@.+\\..+$') {
 				return 'Please enter a valid email address';
@@ -208,22 +228,19 @@ let availableOptions = $derived.by(() => {
 				return 'Invalid format';
 			}
 		}
-		
+
 		return '';
 	}
 
-	// Helper function to check if field has validation error
 	function hasValidationError(block: any, value: string): boolean {
 		return getValidationError(block, value) !== '';
 	}
 
-	// Handle phone verification status update
 	function handlePhoneValidation(blockId: string, isVerified: boolean) {
 		phoneVerified[blockId] = isVerified;
 		validateAllFields();
 	}
 
-	// Parse range from options array like [">=10", "<=200"]
 	function parseRangeOptions(options: string[]): { min: number; max: number } {
 		const parseOperationNumber = (str: string) => {
 			const trimmed = str.trim();
@@ -262,7 +279,6 @@ let availableOptions = $derived.by(() => {
 					onValidationChange={(isVerified) => handlePhoneValidation(block.id, isVerified)}
 				/>
 			{:else if block.type === 'EMAIL'}
-				<!-- Email input with specific validation -->
 				<TextInput
 					value={getBlockValue(block)}
 					placeholder={block.properties?.placeholder || 'Email'}
@@ -277,7 +293,6 @@ let availableOptions = $derived.by(() => {
 					</div>
 				{/if}
 			{:else if block.type === 'TEXT_NOTE'}
-				<!-- Textarea for notes -->
 				<TextAreaInput
 					value={getBlockValue(block)}
 					placeholder={block.properties?.placeholder || ''}
@@ -301,28 +316,31 @@ let availableOptions = $derived.by(() => {
 				{/if}
 
             {:else if block.type === 'GEO_LOCATION'}
-				<!-- Country selector -->
 				<div class="space-y-3">
 					<select
 						class="w-full p-3 bg-muted border-0 rounded-lg focus:bg-background transition-colors text-foreground text-base"
 						value={getGeo(block).countryCode || ''}
 						onchange={(e) => {
-							const code = e.currentTarget.value;
-							const option = availableOptions.find(opt => opt.code === code);
+							const countryIso = e.currentTarget.value;
+							const countryObj = ALL_COUNTRIES.find(c => c.iso === countryIso);
 							updateGeo(idx, {
-								countryCode: code,
-								country: option?.name || countryNameFor(code)
+								country: countryObj?.name || null,
+								countryCode: countryIso,
+								state: null,
+								city: null
 							});
 						}}
 					>
-						<option value="">Select a location...</option>
-						{#each availableOptions as option}
-							<option value={option.code}>{option.name}</option>
+						<option value="">Select a country...</option>
+						{#each availableCountries as country}
+							<option value={country.iso}>{country.name}</option>
 						{/each}
 					</select>
 
 					{#if getGeo(block).countryCode}
-						<!-- Optional address fields (shown after country selection) -->
+						{@const availableStates = getAvailableStates(getGeo(block).countryCode)}
+						{@const availableCities = getAvailableCities(getGeo(block).countryCode, getGeo(block).state)}
+
 						<input
 							type="text"
 							class="w-full p-3 bg-muted border-0 rounded-lg focus:bg-background transition-colors text-foreground placeholder-gray-500 text-base"
@@ -330,14 +348,55 @@ let availableOptions = $derived.by(() => {
 							value={getGeo(block).address || ''}
 							oninput={(e) => updateGeo(idx, { address: e.currentTarget.value })}
 						/>
-						<div class="grid grid-cols-2 gap-3">
+
+						{#if availableStates.length > 0}
+							<select
+								class="w-full p-3 bg-muted border-0 rounded-lg focus:bg-background transition-colors text-foreground text-base"
+								value={getGeo(block).state || ''}
+								onchange={(e) => {
+									updateGeo(idx, {
+										state: e.currentTarget.value,
+										city: null
+									});
+								}}
+							>
+								<option value="">Select a state...</option>
+								{#each availableStates as state}
+									<option value={state}>{state}</option>
+								{/each}
+							</select>
+						{:else}
 							<input
 								type="text"
 								class="w-full p-3 bg-muted border-0 rounded-lg focus:bg-background transition-colors text-foreground placeholder-gray-500 text-base"
-								placeholder="City"
-								value={getGeo(block).city || ''}
-								oninput={(e) => updateGeo(idx, { city: e.currentTarget.value })}
+								placeholder="State/Province (optional)"
+								value={getGeo(block).state || ''}
+								oninput={(e) => updateGeo(idx, { state: e.currentTarget.value })}
 							/>
+						{/if}
+
+						<div class="grid grid-cols-2 gap-3">
+							{#if availableCities.length > 0}
+								<select
+									class="w-full p-3 bg-muted border-0 rounded-lg focus:bg-background transition-colors text-foreground text-base"
+									value={getGeo(block).city || ''}
+									onchange={(e) => updateGeo(idx, { city: e.currentTarget.value })}
+								>
+									<option value="">Select a city...</option>
+									{#each availableCities as city}
+										<option value={city}>{city}</option>
+									{/each}
+								</select>
+							{:else}
+								<input
+									type="text"
+									class="w-full p-3 bg-muted border-0 rounded-lg focus:bg-background transition-colors text-foreground placeholder-gray-500 text-base"
+									placeholder="City"
+									value={getGeo(block).city || ''}
+									oninput={(e) => updateGeo(idx, { city: e.currentTarget.value })}
+								/>
+							{/if}
+
 							<input
 								type="text"
 								class="w-full p-3 bg-muted border-0 rounded-lg focus:bg-background transition-colors text-foreground placeholder-gray-500 text-base"
@@ -374,8 +433,8 @@ let availableOptions = $derived.by(() => {
 
 			{#if block.properties?.description}
 				<p class="mt-1 text-sm italic text-muted-foreground">
-					{typeof block.properties.description === 'object' 
-						? block.properties.description[currLocale] || block.properties.description.en 
+					{typeof block.properties.description === 'object'
+						? block.properties.description[currLocale] || block.properties.description.en
 						: block.properties.description}
 				</p>
 			{/if}
