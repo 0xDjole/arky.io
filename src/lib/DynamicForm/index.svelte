@@ -10,7 +10,7 @@
 	import CheckboxInput from './CheckboxInput.svelte';
 import RangeInput from './RangeInput.svelte';
 import { countries } from 'countries-list';
-import { selectedMarket } from '../core/stores/business';
+import { selectedMarket, zoneDefinitions } from '../core/stores/business';
 
 // Build complete country list from countries-list package
 const ALL_COUNTRIES = Object.entries(countries)
@@ -25,21 +25,29 @@ function countryNameFor(iso: string): string {
     return c ? c.name : (iso || '');
 }
 
-// Available countries based on selected market zones
-let countryCodes = $derived.by(() => {
+// Available zones/countries based on selected market zones
+let availableOptions = $derived.by(() => {
     const market = $selectedMarket;
-    if (!market || !market.zones) {
-        // No market selected or no zones configured
+    const zones = $zoneDefinitions;
+
+    if (!market || !market.zones || market.zones.length === 0) {
         return [];
     }
-    
-    // If market has a global wildcard zone, show all countries
-    if ((market.zones || []).some(z => z.code === '*')) {
-        return ALL_COUNTRIES.map(c => c.iso);
+
+    // If market has a "global" zone, show all countries
+    const hasGlobalZone = market.zones.some(z => z.zoneId === 'global');
+    if (hasGlobalZone) {
+        return ALL_COUNTRIES.map(c => ({ code: c.iso, name: c.name }));
     }
-    
-    // Otherwise show only countries from configured zones
-    return (market.zones || []).map(z => z.code);
+
+    // Otherwise show zones with their names from zone definitions
+    return market.zones.map(mz => {
+        const zoneDef = zones.find(z => z.id === mz.zoneId);
+        return {
+            code: mz.zoneId,
+            name: zoneDef?.name || mz.zoneId
+        };
+    });
 });
 
 	// Props
@@ -300,15 +308,16 @@ let countryCodes = $derived.by(() => {
 						value={getGeo(block).countryCode || ''}
 						onchange={(e) => {
 							const code = e.currentTarget.value;
+							const option = availableOptions.find(opt => opt.code === code);
 							updateGeo(idx, {
 								countryCode: code,
-								country: countryNameFor(code)
+								country: option?.name || countryNameFor(code)
 							});
 						}}
 					>
-						<option value="">Select a country...</option>
-						{#each countryCodes as code}
-							<option value={code}>{countryNameFor(code)}</option>
+						<option value="">Select a location...</option>
+						{#each availableOptions as option}
+							<option value={option.code}>{option.name}</option>
 						{/each}
 					</select>
 

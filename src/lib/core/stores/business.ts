@@ -6,6 +6,8 @@ import type {
 	Business,
 	Market,
 	ShippingMethod,
+	ZoneResolvedShippingMethod,
+	MarketZone,
 	BusinessPaymentMethod,
 	PaymentProviderConfig,
 } from "../types";
@@ -41,39 +43,118 @@ export const markets = computed(businessStore, (state) => {
 	return state.data.configs.markets;
 });
 
+export const zoneDefinitions = computed(businessStore, (state) => {
+	if (!state.data?.configs?.zones) return [];
+	return state.data.configs.zones;
+});
+
+export const shippingMethodDefinitions = computed(businessStore, (state) => {
+	if (!state.data?.configs?.shippingMethods) return [];
+	return state.data.configs.shippingMethods;
+});
+
+export const paymentMethodDefinitions = computed(businessStore, (state) => {
+	if (!state.data?.configs?.paymentMethods) return [];
+	return state.data.configs.paymentMethods;
+});
+
 // Get market by country code (supports wildcard "*" for global zones)
 export const getMarketByCountry = (countryCode: string): Market | null => {
 	const allMarkets = markets.get();
 	const upperCode = countryCode.toUpperCase();
-	
+
 	return (
 		allMarkets.find(
 			(market) =>
-				(market.zones || []).some(z => z.code === '*' || z.code.toUpperCase() === upperCode)
+				(market.zones || []).some(z => z.zoneId === '*' || z.zoneId.toUpperCase() === upperCode)
 		) || null
 	);
 };
 
+// Get zone for a specific country (arky.io custom logic)
+// If country-specific zone exists, use it. Otherwise fallback to "global"
+export const getZoneForCountry = (countryCode: string): MarketZone | null => {
+	const market = selectedMarket.get();
+	if (!market || !market.zones || market.zones.length === 0) return null;
+
+	const upperCode = countryCode?.toUpperCase();
+
+	// Try to find country-specific zone
+	const countryZone = market.zones.find(z => z.zoneId.toUpperCase() === upperCode);
+	if (countryZone) return countryZone;
+
+	// Fallback to global zone
+	const globalZone = market.zones.find(z => z.zoneId === 'global');
+	return globalZone || null;
+};
+
+// Get zone ID for a specific country
+export const getZoneIdForCountry = (countryCode: string): string | null => {
+	const zone = getZoneForCountry(countryCode);
+	return zone?.zoneId || null;
+};
+
 // Get shipping methods for a specific country (from market's shipping methods filtered by zone)
-export const getShippingMethodsForCountry = (countryCode: string): ShippingMethod[] => {
-	const market = getMarketByCountry(countryCode);
-	if (!market) return [];
-	
-	// Find the zone for this country
-	const upperCode = countryCode.toUpperCase();
-	const zone = market.zones?.find(z => z.code === upperCode || z.code === '*');
+// Returns shipping methods enriched with zone-specific pricing
+export const getShippingMethodsForCountry = (countryCode: string): ZoneResolvedShippingMethod[] => {
+	const market = selectedMarket.get();
+	const masterShippingMethods = shippingMethodDefinitions.get();
+
+	if (!market || !market.zones || market.zones.length === 0) return [];
+	if (!masterShippingMethods || masterShippingMethods.length === 0) return [];
+
+	// Get zone for this country (with global fallback)
+	const zone = getZoneForCountry(countryCode);
 	if (!zone) return [];
-	
-	// Return shipping methods from market that are enabled in this zone
-	const availableMethodIds = zone.shippingMethodIds || [];
-	return (market.shippingMethods || []).filter(sm => availableMethodIds.includes(sm.id));
+
+	// Map zone shipping methods to full shipping method objects with zone-specific pricing
+	const zoneShippingMethods = zone.shippingMethods || [];
+	return zoneShippingMethods.map(zsm => {
+		const baseMethod = masterShippingMethods.find(sm => sm.id === zsm.id);
+		if (!baseMethod) return null;
+
+		// Return shipping method with zone-specific pricing
+		return {
+			...baseMethod,
+			zoneAmount: zsm.amount, // Zone-specific price in minor units
+		} as ZoneResolvedShippingMethod;
+	}).filter((sm): sm is ZoneResolvedShippingMethod => sm !== null);
+};
+
+// Get payment methods for a specific country (from zone)
+export const getPaymentMethodsForCountry = (countryCode: string): string[] => {
+	const zone = getZoneForCountry(countryCode);
+	const masterPaymentMethods = paymentMethodDefinitions.get();
+
+	if (!zone || !masterPaymentMethods) return [];
+
+	// Get payment method IDs from zone and map to actual method types
+	const paymentMethodIds = (zone.paymentMethods || []).map(pm => pm.id);
+	return masterPaymentMethods
+		.filter(pm => paymentMethodIds.includes(pm.id))
+		.map(pm => pm.method);
 };
 
 export const paymentMethods = computed(selectedMarket, (market) => {
 	if (!market) return [];
-	// Get unique payment method types from all payment method configs
-	const methods = market.paymentMethods || [];
-	return methods.map((pm: any) => pm.method);
+
+	const masterPaymentMethods = paymentMethodDefinitions.get();
+	if (!masterPaymentMethods) return [];
+
+	// Aggregate all unique payment method IDs from all zones
+	if (market.zones && market.zones.length > 0) {
+		const allMethodIds = new Set<string>();
+		market.zones.forEach(zone => {
+			(zone.paymentMethods || []).forEach(pm => allMethodIds.add(pm.id));
+		});
+
+		// Map IDs to actual method types
+		return masterPaymentMethods
+			.filter(pm => allMethodIds.has(pm.id))
+			.map(pm => pm.method);
+	}
+
+	return [];
 });
 
 export const paymentConfig = computed(businessStore, (state) => {

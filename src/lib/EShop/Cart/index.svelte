@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { onMount, tick } from 'svelte';
+	import { onMount, tick, untrack } from 'svelte';
 	import { showToast } from '@lib/toast.js';
 	import { cartItems, cartTotal, cartItemCount, store, actions, initEshopStore, currency, allowedPaymentMethods, orderBlocks as businessOrderBlocks, paymentConfig, quoteAtom } from '@lib/core/stores/eshop';
-	import { getShippingMethodsForCountry, selectedMarket } from '@lib/core/stores/business';
+	import { getShippingMethodsForCountry, getPaymentMethodsForCountry, selectedMarket } from '@lib/core/stores/business';
 	import { arky } from '@lib/index';
 	import QuantitySelector from '@lib/EShop/QuantitySelector/index.svelte';
 	import AttributeBlocks from '@lib/EShop/AttributeBlocks/index.svelte';
@@ -27,21 +27,22 @@
 	let selectedShippingMethodId = $derived($store.selectedShippingMethodId);
     // Deprecated: shipping form removed in favor of GeoLocation block in DynamicForm
 
+    // Get location block
+    const locationBlock = $derived(orderBlocks.find((b) => b.key === 'location' && b.type === 'GEO_LOCATION'));
+    const countryCode = $derived(locationBlock?.value?.[0]?.countryCode);
+
     // Get available shipping methods based on Location block's country code
     const availableShippingMethods = $derived.by(() => {
-        const locBlock = orderBlocks.find((b) => b.key === 'location' && b.type === 'GEO_LOCATION');
-        const cc = locBlock?.value?.[0]?.countryCode;
-        if (!cc) return [];
+        if (!countryCode) return [];
+        // Zone configuration determines which methods are available
+        // No need to filter by pickup location - if it's in the zone, it's available
+        return getShippingMethodsForCountry(countryCode) || [];
+    });
 
-        const methods = getShippingMethodsForCountry(cc) || [];
-
-        // Filter PICKUP methods to only show those in the same country
-        return methods.filter(m => {
-            if (m.type === 'PICKUP' && m.location?.countryCode) {
-                return m.location.countryCode === cc;
-            }
-            return true; // Show all SHIPPING methods
-        });
+    // Get available payment methods based on zone (country code)
+    const availablePaymentMethods = $derived.by(() => {
+        if (!countryCode) return [];
+        return getPaymentMethodsForCountry(countryCode);
     });
 
     // If location changes or methods list changes, clear selection if invalid
@@ -91,10 +92,12 @@ function formatLinePrice(item) {
 
 	function handleQuantityUpdate(itemId, newQuantity) {
 		actions.updateQuantity(itemId, newQuantity);
+		refreshQuote();
 	}
 
 	function handleRemoveItem(itemId) {
 		actions.removeItem(itemId);
+		refreshQuote();
 	}
 
 	function handleProceedToCheckout() {
@@ -108,35 +111,34 @@ function formatLinePrice(item) {
 async function handleApplyPromoCode(code: string) {
     const candidate = (code || '').trim();
     if (!candidate) return;
+
+    // Temporarily set promo code and fetch quote
+    const prevPromo = appliedPromoCode;
+    appliedPromoCode = candidate;
     await actions.fetchQuote(candidate, orderBlocks);
+
     const err = $store.quoteError;
     if (!err) {
-        appliedPromoCode = candidate;
         showToast(`Promo code "${candidate}" applied`, 'success', 3000);
     } else {
-        // Do not set appliedPromoCode on failure
+        // Revert on failure
+        appliedPromoCode = prevPromo;
         showToast(err, 'error', 4000);
     }
 }
 
 	function handleRemovePromoCode() {
 		appliedPromoCode = null;
-		actions.fetchQuote(null, orderBlocks);
+		refreshQuote();
 		showToast('Promo code removed', 'success', 2000);
 	}
 
-	// Fetch quote when cart/shipping/promo/location changes
-	$effect(() => {
-		if ($cartItems.length > 0) {
-			// Re-fetch quote when cart items, shipping method, location, or promo code changes
-			const _items = $cartItems;
-			const _shipping = selectedShippingMethodId;
-			const _promo = appliedPromoCode;
-			const _location = orderBlocks.find(b => b.key === 'location')?.value;
-
+	// Manually fetch quote when needed
+	function refreshQuote() {
+		if ($cartItems.length > 0 && orderBlocks.length > 0) {
 			actions.fetchQuote(appliedPromoCode, orderBlocks);
 		}
-	});
+	}
 
 	async function handleCheckoutComplete() {
 		// Block submission if form is invalid
@@ -221,32 +223,15 @@ async function handleApplyPromoCode(code: string) {
 		}
 	}
 
-	onMount(async () => {
+	onMount(() => {
 		// Initialize the eshop store to load order blocks
 		initEshopStore();
-		
-// Wait for business store to load configuration
-		const unsubscribe = businessOrderBlocks.subscribe(async (blocks) => {
-			if (blocks && blocks.length > 0) {
-				orderBlocks = blocks.map(block => ({
-					...block,
-					value: block.value && block.value.length > 0 ? block.value :
-						(block.type === 'TEXT' ? [{ en: '' }] :
-						 block.type === 'BOOLEAN' ? [false] :
-						 block.type === 'NUMBER' ? [0] : [''])
-				}));
-			}
-		});
-		
-		return () => {
-			unsubscribe();
-		};
 	});
 
-	// Update order blocks when order blocks change
 	$effect(() => {
-		if ($businessOrderBlocks) {
-			orderBlocks = $businessOrderBlocks.map(block => ({
+		const blocks = $businessOrderBlocks;
+		if (blocks && blocks.length > 0 && orderBlocks.length === 0) {
+			orderBlocks = blocks.map(block => ({
 				...block,
 				value: block.value && block.value.length > 0 ? block.value :
 					(block.type === 'TEXT' ? [{ en: '' }] :
@@ -343,8 +328,14 @@ async function handleApplyPromoCode(code: string) {
 							blocks={orderBlocks}
 							onUpdate={(idx, value) => {
 								const updatedBlocks = [...orderBlocks];
-								updatedBlocks[idx] = { ...updatedBlocks[idx], value: Array.isArray(value) ? value : [value] };
+								const block = updatedBlocks[idx];
+								updatedBlocks[idx] = { ...block, value: Array.isArray(value) ? value : [value] };
 								orderBlocks = updatedBlocks;
+
+								// Refresh quote if location (country) changed
+								if (block.key === 'location' && block.type === 'GEO_LOCATION') {
+									refreshQuote();
+								}
 							}}
 							onPhoneSendCode={handlePhoneSendCode}
 							onPhoneVerifyCode={handlePhoneVerifyCode}
@@ -357,14 +348,14 @@ async function handleApplyPromoCode(code: string) {
 								<h4 class="text-lg font-semibold mb-3">Shipping</h4>
 								<div class="grid gap-3">
 								{#each availableShippingMethods as method}
-										{@const market = $selectedMarket}
-										{@const price = method.prices?.find(p => p.market === market?.id)}
-										{@const rate = price?.amount || 0}
-										{@const freeThreshold = price?.freeThreshold || 0}
+										{@const rate = method.zoneAmount || 0}
 										<label class="flex items-center gap-3 p-3 border rounded-lg cursor-pointer">
 											<input type="radio" name="shipping" value={method.id}
 												checked={selectedShippingMethodId === method.id}
-												on:change={() => store.setKey('selectedShippingMethodId', method.id)} />
+												on:change={() => {
+													store.setKey('selectedShippingMethodId', method.id);
+													refreshQuote();
+												}} />
 											<span class="flex-1">
 												{(method.type || 'SHIPPING') + ' · ' + (method.id?.toUpperCase?.() || method.id)}
 												{#if method.etaText}
@@ -377,15 +368,7 @@ async function handleApplyPromoCode(code: string) {
 												{/if}
 											</span>
 											<span class="text-sm text-muted-foreground text-right">
-												{#if freeThreshold && $cartTotal.subtotal >= freeThreshold}
-													<span class="text-green-600 font-medium">Free</span>
-													<span class="block text-xs text-green-600">Order over {arky.utils.formatMinor(freeThreshold, $currency)}</span>
-												{:else if freeThreshold && freeThreshold > 0}
-													<span>{arky.utils.formatMinor(rate, $currency)}</span>
-													<span class="block text-xs">Free over {arky.utils.formatMinor(freeThreshold, $currency)}</span>
-												{:else}
-													{arky.utils.formatMinor(rate, $currency)}
-												{/if}
+												{arky.utils.formatMinor(rate, $currency)}
 											</span>
 										</label>
 									{/each}
@@ -395,17 +378,19 @@ async function handleApplyPromoCode(code: string) {
 							<!-- No shipping until location provided -->
 						{/if}
 
-						<!-- Payment -->
-						<PaymentForm
-							allowedMethods={$allowedPaymentMethods}
-							paymentProvider={$paymentConfig?.provider}
-							{selectedPaymentMethod}
-							onPaymentMethodChange={(method) => selectedPaymentMethod = method}
-							onStripeReady={(confirmFn) => confirmPayment = confirmFn}
-							onValidationChange={handlePaymentValidationChange}
-							error={paymentError}
-							variant="eshop"
-						/>
+						<!-- Payment (only show after location selected) -->
+						{#if countryCode && availablePaymentMethods.length > 0}
+							<PaymentForm
+								allowedMethods={availablePaymentMethods}
+								paymentProvider={$paymentConfig?.provider}
+								{selectedPaymentMethod}
+								onPaymentMethodChange={(method) => selectedPaymentMethod = method}
+								onStripeReady={(confirmFn) => confirmPayment = confirmFn}
+								onValidationChange={handlePaymentValidationChange}
+								error={paymentError}
+								variant="eshop"
+							/>
+						{/if}
 
 						<!-- Promo Code -->
 						<PromoCode

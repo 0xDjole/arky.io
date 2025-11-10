@@ -748,6 +748,7 @@ export const actions = {
                 parts: state.parts,
                 paymentMethod,
                 promoCode,
+                zoneId: "global",
             });
 
             return {
@@ -784,13 +785,12 @@ export const actions = {
             const market = marketObj?.id || 'us';
             const curr = currency.get() || 'USD';
 
-            console.log('Calling arky.reservation.getQuote with:', { currency: curr, promoCode });
-
             const result = await arky.reservation.getQuote({
                 currency: curr,
                 parts: state.parts,
                 paymentMethod,
                 promoCode,
+                zoneId: "global",
             });
 
             console.log('Quote received:', result);

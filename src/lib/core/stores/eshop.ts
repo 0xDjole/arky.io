@@ -6,6 +6,7 @@ import {
     selectedMarket,
     currency,
     getShippingMethodsForCountry,
+    getZoneIdForCountry,
     paymentMethods,
     paymentConfig,
     orderBlocks,
@@ -192,13 +193,17 @@ export const actions = {
                 throw new Error("No market selected");
             }
 
-            // Extract country code from location block
             const locationBlock = blocks.find(b => b.key === 'location' && b.type === 'GEO_LOCATION');
             const firstLoc = Array.isArray(locationBlock?.value) ? locationBlock?.value?.[0] : locationBlock?.value;
             const countryCode = firstLoc?.countryCode || '';
 
             if (!countryCode) {
                 throw new Error("Country is required for checkout");
+            }
+
+            let zoneId = getZoneIdForCountry(countryCode);
+            if (!zoneId) {
+                zoneId = "global";
             }
 
             // Get available shipping methods for the country
@@ -231,12 +236,14 @@ export const actions = {
             });
 
             const promo = promoCode !== undefined ? promoCode : promoCodeAtom.get();
+
             const response = await arky.eshop.checkout({
                 items: orderItems,
                 paymentMethod: paymentMethod,
                 blocks: normalizedBlocks,
                 shippingMethodId: shippingMethod.id,
                 promoCode: promo || undefined,
+                zoneId: zoneId,
             }, {
                 onSuccess: onSuccess('Order placed successfully!'),
                 onError: onError('Failed to place order')
@@ -380,6 +387,10 @@ export const actions = {
                 coordinates: firstLoc.coordinates || null
             } : undefined;
 
+            // Get zoneId based on country (with global fallback)
+            const countryCode = firstLoc?.countryCode;
+            const zoneId = countryCode ? (getZoneIdForCountry(countryCode) || "global") : "global";
+
             const response = await arky.eshop.getQuote({
                 items: items.map(item => ({
                     productId: item.productId,
@@ -391,6 +402,7 @@ export const actions = {
                 shippingMethodId,
                 promoCode: promo || undefined,
                 location,
+                zoneId: zoneId,
             });
 
             if (response) {

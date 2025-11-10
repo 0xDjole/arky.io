@@ -115,6 +115,23 @@ export interface PaymentProviderConfig {
 	webhookSecret: string;
 }
 
+// Zone types (geography-based configuration within markets)
+export interface ZonePaymentMethod {
+	id: string;
+}
+
+export interface ZoneShippingMethod {
+	id: string;
+	amount: number; // Shipping cost in minor units (zone-specific)
+}
+
+export interface MarketZone {
+	taxBps: number;
+	zoneId: string;
+	paymentMethods: ZonePaymentMethod[];
+	shippingMethods: ZoneShippingMethod[];
+}
+
 // Market types (business-owned) - camelCase for frontend
 export interface CountryConfig { code: string; taxBps: number }
 export interface Market {
@@ -122,18 +139,24 @@ export interface Market {
 	name: string;
 	currency: string;
 	taxMode: "INCLUSIVE" | "EXCLUSIVE";
-	countries: CountryConfig[]; // Use { code, taxBps } per country; code "*" allowed
-	paymentMethods: BusinessPaymentMethod[];
-	shippingMethods: ShippingMethod[];
+	zones: MarketZone[]; // NEW: Zone-based configuration
+	shippingMethods: ShippingMethod[]; // Master list of available methods
+	// Deprecated fields (kept for backwards compatibility during migration)
+	countries?: CountryConfig[];
+	paymentMethods?: BusinessPaymentMethod[];
 }
 
 export interface ShippingMethod {
     id: string;
     type: 'SHIPPING' | 'PICKUP';
-    prices: Price[]; // Market-based pricing with free thresholds
     taxable: boolean;
     etaText: string; // e.g., "3-5 business days"
     location?: Location; // Pickup address (only for PICKUP type)
+}
+
+// Helper type: ShippingMethod enriched with zone-specific pricing (used in frontend)
+export interface ZoneResolvedShippingMethod extends ShippingMethod {
+	zoneAmount: number; // Zone-specific price in minor units
 }
 
 export interface BusinessPaymentMethod {
