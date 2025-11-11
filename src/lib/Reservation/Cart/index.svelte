@@ -11,7 +11,7 @@
 	import PromoCode from '@lib/shared/PromoCode/index.svelte';
 
 	let appliedPromoCode = $state<string | null>(null);
-	let selectedPaymentMethod = $state('CASH');
+	let selectedPaymentMethod: string = $state('CASH');
 	let paymentProcessing = $state(false);
 	let paymentError = $state(null);
 	let confirmPayment = null;

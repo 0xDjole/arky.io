@@ -14,7 +14,7 @@ import {
 } from "./business";
 import type { EshopCartItem, EshopStoreState, Block, Price, Payment, Quote } from "../types";
 import { onSuccess, onError } from "@lib/utils/notify";
-import { PaymentMethod } from "../types";
+import { PaymentMethodType } from "../types";
 // Toast notifications should be handled by UI layer
 
 // Frontend cart items
@@ -62,7 +62,7 @@ export const cartTotal = computed([cartItems, selectedMarket, currency], (items,
         throw new Error('Market and currency must be configured');
     }
 
-    return arky.utils.createPaymentForCheckout(subtotalMinor, market.id, curr, PaymentMethod.Cash);
+    return arky.utils.createPaymentForCheckout(subtotalMinor, market.id, curr, PaymentMethodType.Cash);
 });
 
 export const cartItemCount = computed(cartItems, (items) => {
@@ -174,7 +174,7 @@ export const actions = {
     },
 
     // Process checkout - Updated to use Payment structure
-    async checkout(paymentMethod: PaymentMethod = PaymentMethod.Cash, orderInfoBlocks?: Block[], promoCode?: string | null) {
+    async checkout(paymentMethod: string = PaymentMethodType.Cash, orderInfoBlocks?: Block[], promoCode?: string | null) {
         const items = cartItems.get();
         if (!items.length) {
             return { success: false, error: "Cart is empty" };
@@ -315,7 +315,7 @@ export const actions = {
         }
 
         if (!items || items.length === 0) {
-            return arky.utils.createPaymentForCheckout(0, market.id, currencyCode, PaymentMethod.Cash);
+            return arky.utils.createPaymentForCheckout(0, market.id, currencyCode, PaymentMethodType.Cash);
         }
 
         const subtotalMinor = items.reduce((sum, item) => {
@@ -326,11 +326,11 @@ export const actions = {
             return sum + (amountMinor * item.quantity);
         }, 0);
 
-        return arky.utils.createPaymentForCheckout(subtotalMinor, market.id, currencyCode, PaymentMethod.Cash);
+        return arky.utils.createPaymentForCheckout(subtotalMinor, market.id, currencyCode, PaymentMethodType.Cash);
     },
 
     // Get available payment methods for selected market
-    getAvailablePaymentMethods(): PaymentMethod[] {
+    getAvailablePaymentMethods(): string[] {
         const methods = paymentMethods.get();
         if (!methods || methods.length === 0) {
             throw new Error('No payment methods configured for selected market');
@@ -391,7 +391,7 @@ export const actions = {
                     quantity: item.quantity,
                 })),
                 currency: currencyCode,
-                paymentMethod: PaymentMethod.Cash,
+                paymentMethod: PaymentMethodType.Cash,
                 shippingMethodId,
                 promoCode: promo || undefined,
                 location,

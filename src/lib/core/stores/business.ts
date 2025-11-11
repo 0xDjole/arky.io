@@ -8,10 +8,10 @@ import type {
 	ShippingMethod,
 	ZoneResolvedShippingMethod,
 	MarketZone,
-	BusinessPaymentMethod,
+	PaymentMethod,
 	PaymentProviderConfig,
 } from "../types";
-import { PaymentMethod } from "../types";
+import { PaymentMethodType } from "../types";
 
 // Core business state
 export const businessStore = deepMap({
@@ -132,7 +132,7 @@ export const getPaymentMethodsForCountry = (countryCode: string): string[] => {
 	const paymentMethodIds = (zone.paymentMethods || []).map(pm => pm.id);
 	return masterPaymentMethods
 		.filter(pm => paymentMethodIds.includes(pm.id))
-		.map(pm => pm.method);
+		.map(pm => pm.type);
 };
 
 export const paymentMethods = computed(selectedMarket, (market) => {
@@ -151,7 +151,7 @@ export const paymentMethods = computed(selectedMarket, (market) => {
 		// Map IDs to actual method types
 		return masterPaymentMethods
 			.filter(pm => allMethodIds.has(pm.id))
-			.map(pm => pm.method);
+			.map(pm => pm.type);
 	}
 
 	return [];

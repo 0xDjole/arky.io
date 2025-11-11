@@ -16,7 +16,7 @@
 
 	let showCheckoutSection = $state(false);
 	let checkoutFormData = $state({});
-	let selectedPaymentMethod = $state('CASH');
+	let selectedPaymentMethod: string = $state('CASH');
 	let paymentProcessing = $state(false);
 	let paymentError = $state(null);
 	let orderBlocks = $state([]);

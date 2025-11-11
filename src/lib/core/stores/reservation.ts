@@ -13,7 +13,7 @@ import {
     businessActions
 } from "./business";
 import type { ReservationStoreState, ReservationCartPart, Business, Block, Payment } from "../types";
-import { PaymentMethod } from "../types";
+import { PaymentMethodType } from "../types";
 import { onSuccess, onError } from "@lib/utils/notify";
 
 export const cartParts = persistentAtom<ReservationCartPart[]>("reservationCart", [], {
@@ -736,7 +736,7 @@ export const actions = {
         }
     },
 
-    async checkout(paymentMethod: PaymentMethod = PaymentMethod.Cash, reservationBlocks?: Block[], promoCode?: string) {
+    async checkout(paymentMethod: string = PaymentMethodType.Cash, reservationBlocks?: Block[], promoCode?: string) {
         const state = store.get();
         if (state.loading || !state.parts.length) return { success: false, error: "No parts in cart" };
 
@@ -765,7 +765,7 @@ export const actions = {
         }
     },
 
-    async fetchQuote(paymentMethod: PaymentMethod = PaymentMethod.Cash, promoCode?: string) {
+    async fetchQuote(paymentMethod: string = PaymentMethodType.Cash, promoCode?: string) {
         const state = store.get();
 
         console.log('fetchQuote called with promoCode:', promoCode);
@@ -847,7 +847,7 @@ const subtotalMinor = state.parts.reduce((sum, part) => {
             subtotalMinor,
             'US',
             state.currency,
-            PaymentMethod.Cash
+            PaymentMethodType.Cash
         );
     },
 };

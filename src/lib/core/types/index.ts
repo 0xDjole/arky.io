@@ -14,14 +14,14 @@ export interface Payment {
 	promoCode?: string;
 	promoType?: string;
 	promoValue?: number;
-	method: PaymentMethod;
+	type: PaymentMethodType;
 	customerId?: string;
 	paymentIntentId?: string;
 	subscriptionId?: string;
 	priceId?: string;
 }
 
-export enum PaymentMethod {
+export enum PaymentMethodType {
 	Cash = "CASH",
 	CreditCard = "CREDIT_CARD",
 	Free = "FREE",
@@ -159,8 +159,9 @@ export interface ZoneResolvedShippingMethod extends ShippingMethod {
 	zoneAmount: number; // Zone-specific price in minor units
 }
 
-export interface BusinessPaymentMethod {
-	method: PaymentMethod;
+export interface PaymentMethod {
+	id: string;
+	type: PaymentMethodType;
 }
 
 // Business types
