@@ -10,26 +10,18 @@
 		try {
 			const url = new URL(window.location.href);
 			const token = url.searchParams.get('token') || url.searchParams.get('unsubscribeToken');
-			const collectionId = url.searchParams.get('collectionId') || url.searchParams.get('collection');
 
 			if (!token) {
 				status = 'error';
 				message = 'Invalid or missing token.';
 				return;
 			}
-			if (!collectionId) {
-				status = 'error';
-				message = 'Missing collection identifier in the link.';
-				return;
-			}
 
 			status = 'loading';
 			message = 'Updating your subscription...';
 
-			// Unify via subscribe endpoint with secure token
-			await (arky.cms as any).subscribeToCollection({
-				id: collectionId,
-				unsubscribeToken: token
+			await arky.user.subscribe({
+				identifier: token,
 			});
 
 			status = 'success';

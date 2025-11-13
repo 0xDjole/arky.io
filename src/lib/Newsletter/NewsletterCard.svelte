@@ -49,25 +49,27 @@
 		subscribing = true;
 		error = null;
 
-		if (newsletter.newsletterType === 'FREE') {
-			try {
-				const { arky } = await import('@lib/index');
-				await arky.cms.subscribeToCollection({
-					id: newsletter.id,
-					email: email,
-					planId: newsletter.plans[0].id,
-				});
+	if (newsletter.newsletterType === 'FREE') {
+		try {
+			const { arky } = await import('@lib/index');
+			await arky.user.subscribe({
+				identifier: email,
+				target: newsletter.id,
+				planId: newsletter.plans[0].id,
+				successUrl: window.location.origin + '/newsletters?subscribed=true',
+				cancelUrl: window.location.origin + '/newsletters',
+			});
 
-				alert('Successfully subscribed to the newsletter!');
-				email = ''; // Clear the email field
-			} catch (err) {
-				console.error('Subscription error:', err);
-				error = err instanceof Error ? err.message : 'Failed to subscribe';
-			} finally {
-				subscribing = false;
-			}
-			return;
+			alert('Successfully subscribed to the newsletter!');
+			email = '';
+		} catch (err) {
+			console.error('Subscription error:', err);
+			error = err instanceof Error ? err.message : 'Failed to subscribe';
+		} finally {
+			subscribing = false;
 		}
+		return;
+	}
 
 		// Handle paid newsletter subscription with Stripe
 		const price = getPrice();
@@ -76,30 +78,29 @@
 			return;
 		}
 
-		try {
-			// Subscribe to paid newsletter - backend returns checkout URL
-			const { arky } = await import('@lib/index');
-			const response = await arky.cms.subscribeToCollection({
-				id: newsletter.id,
-				email: email,
-				planId: newsletter.plans[0].id,
-			});
+	try {
+		const { arky } = await import('@lib/index');
+		const response = await arky.user.subscribe({
+			identifier: email,
+			target: newsletter.id,
+			planId: newsletter.plans[0].id,
+			successUrl: window.location.origin + '/newsletters?subscribed=true',
+			cancelUrl: window.location.origin + '/newsletters',
+		});
 
-			// Backend returns {subscriptionId, status, checkoutUrl}
-			const { checkoutUrl } = response;
+		const { checkoutUrl } = response;
 
-			if (!checkoutUrl) {
-				throw new Error('No checkout URL received from server');
-			}
-
-			// Redirect directly to Stripe checkout URL
-			window.location.href = checkoutUrl;
-		} catch (err) {
-			console.error('Subscription error:', err);
-			error = err instanceof Error ? err.message : 'Failed to start subscription';
-		} finally {
-			subscribing = false;
+		if (!checkoutUrl) {
+			throw new Error('No checkout URL received from server');
 		}
+
+		window.location.href = checkoutUrl;
+	} catch (err) {
+		console.error('Subscription error:', err);
+		error = err instanceof Error ? err.message : 'Failed to start subscription';
+	} finally {
+		subscribing = false;
+	}
 	};
 </script>
 
