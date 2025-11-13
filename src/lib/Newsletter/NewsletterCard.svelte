@@ -54,7 +54,7 @@
 			const { arky } = await import('@lib/index');
 			await arky.user.subscribe({
 				identifier: email,
-				target: newsletter.id,
+				target: `collection:${newsletter.id}`,
 				planId: newsletter.plans[0].id,
 				successUrl: window.location.origin + '/newsletters?subscribed=true',
 				cancelUrl: window.location.origin + '/newsletters',
@@ -82,7 +82,7 @@
 		const { arky } = await import('@lib/index');
 		const response = await arky.user.subscribe({
 			identifier: email,
-			target: newsletter.id,
+			target: `collection:${newsletter.id}`,
 			planId: newsletter.plans[0].id,
 			successUrl: window.location.origin + '/newsletters?subscribed=true',
 			cancelUrl: window.location.origin + '/newsletters',
