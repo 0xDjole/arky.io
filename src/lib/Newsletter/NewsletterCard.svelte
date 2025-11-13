@@ -53,7 +53,7 @@
 			try {
 				const { arky } = await import('@lib/index');
 				await arky.cms.subscribeToCollection({
-					collectionId: newsletter.id,
+					id: newsletter.id,
 					email: email,
 					planId: newsletter.plans[0].id,
 				});
@@ -80,7 +80,7 @@
 			// Subscribe to paid newsletter - backend returns checkout URL
 			const { arky } = await import('@lib/index');
 			const response = await arky.cms.subscribeToCollection({
-				collectionId: newsletter.id,
+				id: newsletter.id,
 				email: email,
 				planId: newsletter.plans[0].id,
 			});

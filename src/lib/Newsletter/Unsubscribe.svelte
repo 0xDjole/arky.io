@@ -28,7 +28,7 @@
 
 			// Unify via subscribe endpoint with secure token
 			await (arky.cms as any).subscribeToCollection({
-				collectionId,
+				id: collectionId,
 				unsubscribeToken: token
 			});
 
