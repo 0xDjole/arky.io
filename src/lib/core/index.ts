@@ -10,7 +10,7 @@ export type {
     EshopCartItem, 
     EshopStoreState, 
     ReservationStoreState, 
-    ReservationCartPart, 
+    ReservationCartItem, 
     Business, 
     Block, 
     Price 

@@ -12,11 +12,11 @@ import {
     reservationBlocks,
     businessActions
 } from "./business";
-import type { ReservationStoreState, ReservationCartPart, Business, Block, Payment } from "../types";
+import type { ReservationStoreState, ReservationCartItem, Business, Block, Payment } from "../types";
 import { PaymentMethodType } from "../types";
 import { onSuccess, onError } from "@lib/utils/notify";
 
-export const cartParts = persistentAtom<ReservationCartPart[]>("reservationCart", [], {
+export const cartParts = persistentAtom<ReservationCartItem[]>("reservationCart", [], {
     encode: JSON.stringify,
     decode: JSON.parse,
 });
@@ -75,7 +75,7 @@ export const store = deepMap<ReservationStoreState>({
     storageUrl: STORAGE_URL,
     timezone: arky.utils.findTimeZone(arky.utils.tzGroups),
     tzGroups: arky.utils.tzGroups,
-    parts: [],
+    items: [],
 });
 
 export const currentStepName = computed(store, (state) => {
@@ -633,7 +633,7 @@ export const actions = {
             value: Array.isArray(f.value) ? f.value : [f.value],
         }));
 
-        const newPart: ReservationCartPart = {
+        const newPart: ReservationCartItem = {
             id,
             serviceId: state.service.id,
             serviceName: getLocalizedString(state.service.name, getLocale()),
@@ -647,8 +647,8 @@ export const actions = {
             blocks,
         };
 
-        const newParts = [...state.parts, newPart];
-        store.setKey("parts", newParts);
+        const newParts = [...state.items, newPart];
+        store.setKey("items", newParts);
         cartParts.set(newParts);
 
         this.resetDateSelection();
@@ -659,8 +659,8 @@ export const actions = {
     },
 
     removePart(id: string) {
-        const filteredParts = store.get().parts.filter((p) => p.id !== id);
-        store.setKey("parts", filteredParts);
+        const filteredParts = store.get().items.filter((p) => p.id !== id);
+        store.setKey("items", filteredParts);
         cartParts.set(filteredParts);
     },
 
@@ -738,14 +738,14 @@ export const actions = {
 
     async checkout(paymentMethod: string = PaymentMethodType.Cash, reservationBlocks?: Block[], promoCode?: string) {
         const state = store.get();
-        if (state.loading || !state.parts.length) return { success: false, error: "No parts in cart" };
+        if (state.loading || !state.items.length) return { success: false, error: "No parts in cart" };
 
         store.setKey("loading", true);
 
         try {
             const result = await arky.reservation.checkout({
                 blocks: reservationBlocks || [],
-                parts: state.parts,
+                items: state.items,
                 paymentMethod,
                 promoCode,
             });
@@ -770,7 +770,7 @@ export const actions = {
 
         console.log('fetchQuote called with promoCode:', promoCode);
 
-        if (!state.parts.length) {
+        if (!state.items.length) {
             store.setKey("quote", null);
             store.setKey("quoteError", null);
             return;
@@ -786,7 +786,7 @@ export const actions = {
 
             const result = await arky.reservation.getQuote({
                 currency: curr,
-                parts: state.parts,
+                items: state.items,
                 paymentMethod,
                 promoCode,
             });
@@ -836,7 +836,7 @@ getServicePrice(): string {
     // NEW: Get reservation total as Payment structure
     getReservationPayment(): Payment {
         const state = store.get();
-const subtotalMinor = state.parts.reduce((sum, part) => {
+const subtotalMinor = state.items.reduce((sum, part) => {
             const servicePrices = state.service?.prices || [];
             // amounts are in minor units
             const amountMinor = servicePrices.length > 0 ? arky.utils.getPriceAmount(servicePrices, 'US') : 0;
@@ -858,7 +858,7 @@ export function initReservationStore() {
 
     const savedParts = cartParts.get();
     if (savedParts && savedParts.length > 0) {
-        store.setKey("parts", savedParts);
+        store.setKey("items", savedParts);
     }
 
     store.listen((state) => {
@@ -872,15 +872,15 @@ export function initReservationStore() {
             actions.createMultiDaySlot();
         }
 
-        if (JSON.stringify(state.parts) !== JSON.stringify(cartParts.get())) {
-            cartParts.set(state.parts);
+        if (JSON.stringify(state.items) !== JSON.stringify(cartParts.get())) {
+            cartParts.set(state.items);
         }
     });
 
     cartParts.listen((parts) => {
-        const currentParts = store.get().parts;
+        const currentParts = store.get().items;
         if (JSON.stringify(parts) !== JSON.stringify(currentParts)) {
-            store.setKey("parts", parts);
+            store.setKey("items", parts);
         }
     });
 }

@@ -38,7 +38,7 @@
 	});
 
 	$effect(() => {
-		const isInquiryOnly = ($store.parts || []).every(part => part.reservationMethod?.includes('INQUIRY'));
+		const isInquiryOnly = ($store.items || []).every(part => part.reservationMethod?.includes('INQUIRY'));
 
 		if (isInquiryOnly) {
 			selectedPaymentMethod = 'FREE';
@@ -52,7 +52,7 @@
 
 	// Manually fetch quote when needed
 	function refreshQuote() {
-		if ($store.parts && $store.parts.length > 0) {
+		if ($store.items && $store.items.length > 0) {
 			actions.fetchQuote(selectedPaymentMethod, appliedPromoCode);
 		}
 	}
@@ -133,7 +133,7 @@ async function handleApplyPromoCode(code: string) {
 
 				// Clear cart and promo code
 				const emptyCart = [];
-				store.setKey("parts", emptyCart);
+				store.setKey("items", emptyCart);
 				cartParts.set(emptyCart);
 				appliedPromoCode = null;
 				return;
@@ -164,7 +164,7 @@ async function handleApplyPromoCode(code: string) {
 
 			// Clear cart and promo code on success
 			const emptyCart = [];
-			store.setKey("parts", emptyCart);
+			store.setKey("items", emptyCart);
 			cartParts.set(emptyCart);
 			appliedPromoCode = null;
 
@@ -191,7 +191,7 @@ async function handleApplyPromoCode(code: string) {
 		/>
 	{/if}
 
-	{#if !$store.parts?.length}
+	{#if !$store.items?.length}
 		<div class="bg-secondary rounded-lg p-6 text-center">
 			<div class="text-muted bg-tertiary mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
 				<Icon icon="mdi:cart-outline" class="h-8 w-8" />
@@ -200,7 +200,7 @@ async function handleApplyPromoCode(code: string) {
 		</div>
 	{:else}
 		<div class="space-y-2">
-			{#each $store.parts || [] as part (part.id)}
+			{#each $store.items || [] as part (part.id)}
 				<div class="bg-secondary border-secondary rounded-lg border p-4">
 					<div class="flex items-center justify-between">
 						<div>
@@ -255,13 +255,13 @@ async function handleApplyPromoCode(code: string) {
 			fetchingQuote={$store.fetchingQuote}
 			quoteError={$store.quoteError}
 			currency={$currency || 'USD'}
-			itemCount={$store.parts?.length || 0}
+			itemCount={$store.items?.length || 0}
 			itemLabel="service"
 			title="Reservation Summary"
 			showShipping={false}
 		/>
 
-		{#if selectedPaymentMethod === 'CREDIT_CARD' && ($store.parts || []).some(part => !part.reservationMethod?.includes('INQUIRY'))}
+		{#if selectedPaymentMethod === 'CREDIT_CARD' && ($store.items || []).some(part => !part.reservationMethod?.includes('INQUIRY'))}
 			<PaymentForm
 				allowedMethods={$paymentMethods || ['CASH']}
 				paymentProvider={$paymentConfig?.provider}
@@ -276,7 +276,7 @@ async function handleApplyPromoCode(code: string) {
 			<!-- Payment method selection only -->
 			<div class="space-y-4">
 				<div>
-					{#each [($store.parts || []).every(part => part.reservationMethod?.includes('INQUIRY'))] as isInquiryOnly}
+					{#each [($store.items || []).every(part => part.reservationMethod?.includes('INQUIRY'))] as isInquiryOnly}
 						{@const availableMethods = isInquiryOnly ? ['FREE'] : ($paymentMethods || ['CASH'])}
 						<div class="grid gap-3" class:grid-cols-2={availableMethods.length > 1} class:grid-cols-1={availableMethods.length === 1}>
 						{#if availableMethods.includes('FREE')}
@@ -360,9 +360,9 @@ async function handleApplyPromoCode(code: string) {
 								class:bg-secondary={selectedPaymentMethod !== 'CREDIT_CARD'}
 								class:hover:bg-tertiary={selectedPaymentMethod !== 'CREDIT_CARD'}
 								onclick={() => selectedPaymentMethod = 'CREDIT_CARD'}
-								disabled={($store.parts || []).every(part => part.reservationMethod?.includes('INQUIRY'))}
-								class:opacity-50={($store.parts || []).every(part => part.reservationMethod?.includes('INQUIRY'))}
-								class:cursor-not-allowed={($store.parts || []).every(part => part.reservationMethod?.includes('INQUIRY'))}
+								disabled={($store.items || []).every(part => part.reservationMethod?.includes('INQUIRY'))}
+								class:opacity-50={($store.items || []).every(part => part.reservationMethod?.includes('INQUIRY'))}
+								class:cursor-not-allowed={($store.items || []).every(part => part.reservationMethod?.includes('INQUIRY'))}
 							>
 								{#if selectedPaymentMethod === 'CREDIT_CARD'}
 									<div class="absolute top-2 right-2">
@@ -382,7 +382,7 @@ async function handleApplyPromoCode(code: string) {
 											class:text-primary-foreground={selectedPaymentMethod === 'CREDIT_CARD'}
 											class:text-secondary={selectedPaymentMethod !== 'CREDIT_CARD'}
 										>
-											{#if ($store.parts || []).every(part => part.reservationMethod?.includes('INQUIRY'))}
+											{#if ($store.items || []).every(part => part.reservationMethod?.includes('INQUIRY'))}
 												Not available for inquiries
 											{:else}
 												Secure online payment
