@@ -75,7 +75,7 @@
 
 			<div class="flex justify-between text-sm text-card-foreground">
 				<span>Tax:</span>
-				<span class="font-medium">{arky.utils.formatMinor(quote.tax, currency)}</span>
+				<span class="font-medium">{arky.utils.formatMinor(quote.payment.tax?.amount ?? 0, currency)}</span>
 			</div>
 
 			<div class="border-t border-border pt-3 mt-2"></div>
