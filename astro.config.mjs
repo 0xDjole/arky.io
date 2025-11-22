@@ -21,10 +21,6 @@ const config = JSON.parse(fs.readFileSync(`./config/${environment}.json`, 'utf-8
 export default defineConfig({
 	output: "static",
 	site: config.siteUrl,
-	image: {
-		// Allow any images coming from your CMS domain(s)
-		domains: ["storage.arky.io"],
-	},
 	redirects: {},
 	// i18n configuration must match src/config/translations.json.ts
 	i18n: {

@@ -102,14 +102,14 @@
 							<img
 								src={imageUrl}
 								alt={altText}
-								referrerpolicy="no-referrer"
+								
 							/>
 						</a>
 					{:else}
 						<img
 							src={imageUrl}
 							alt={altText}
-							referrerpolicy="no-referrer"
+							
 						/>
 					{/if}
 				</div>
@@ -126,7 +126,7 @@
 							src={badgeImage} 
 							alt={badgeText}
 							class="w-full h-full object-cover"
-							referrerpolicy="no-referrer"
+							
 						/>
 					</div>
 				{:else}

@@ -7,7 +7,6 @@ import { arky } from '@lib/index';
 	import appConfig from '../../../appConfig';
 
 	const API_URL = appConfig.apiUrl;
-	const STORAGE_URL = appConfig.storageUrl;
 	const BUSINESS_ID = appConfig.businessId;
 
 	let locale = "en";
@@ -139,7 +138,7 @@ import { arky } from '@lib/index';
 		{:else}
 			{#each services as service (service.id)}
 			{@const thumbPath = getGalleryThumbnail(service.blocks)}
-			{@const thumbUrl = thumbPath ? `${STORAGE_URL}/${thumbPath}` : null}
+			{@const thumbUrl = thumbPath || null}
 			{@const serviceSlug = service.seo?.slug?.[locale] || service.seo?.slug?.en || service.id}
 
 			<a
@@ -150,7 +149,7 @@ import { arky } from '@lib/index';
 					<img
 						src={thumbUrl}
 						alt={service.name[locale] || service.name.en}
-						referrerpolicy="no-referrer"
+						
 						class="w-full h-48 object-cover"
 					/>
 				{:else}

@@ -55,9 +55,9 @@
 						{#if media}
 							<div class="h-10 w-10 flex-shrink-0 overflow-hidden rounded-full">
 								<img
-									src={`${$store.storageUrl}/${media.resolutions?.thumbnail?.url ?? media.resolutions?.original?.url}`}
+									src={media.resolutions?.thumbnail?.url ?? media.resolutions?.original?.url}
 									alt={r.name}
-									referrerpolicy="no-referrer"
+									
 									class="h-full w-full object-cover"
 								/>
 							</div>

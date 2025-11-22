@@ -309,7 +309,6 @@ export interface ReservationStoreState {
 	reservationBlocks: Block[];
 	apiUrl: string;
 	businessId: string;
-	storageUrl: string;
 	timezone: string;
 	tzGroups: any;
 	items: ReservationCartItem[];

@@ -32,6 +32,5 @@ export const SUPPORTED_FRAMEWORKS = ['astro', 'react', 'vue', 'svelte', 'vanilla
 export function initArkyCore(config?: {
     businessId?: string;
     apiUrl?: string;
-    storageUrl?: string;
 }) {
 }

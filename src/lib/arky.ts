@@ -3,13 +3,11 @@ import appConfig from "../appConfig";
 
 // Get API URL from appConfig (which is based on PUBLIC_ENVIRONMENT)
 const API_URL = appConfig.apiUrl;
-const STORAGE_URL = appConfig.storageUrl;
 // Build-time admin token for SSR (private, not exposed to client)
 const ARKY_TOKEN = import.meta.env.ARKY_TOKEN || "";
 
 export const arky = createArkySDK({
 	baseUrl: API_URL,
-	storageUrl: STORAGE_URL,
 	businessId: appConfig.businessId,
 	market: "us",
 	locale: "en",

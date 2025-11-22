@@ -76,7 +76,6 @@ Configuration is selected via the `PUBLIC_ENVIRONMENT` environment variable.
 {
   "environment": "dev",
   "apiUrl": "http://localhost:8000",
-  "storageUrl": "https://storage.arky.io/dev",
   "siteUrl": "http://localhost:4322",
   "businessId": "4429b3d1-e12f-43d4-8232-62da8ae3da85"
 }
@@ -87,7 +86,6 @@ Configuration is selected via the `PUBLIC_ENVIRONMENT` environment variable.
 {
   "environment": "prod",
   "apiUrl": "https://api.arky.io",
-  "storageUrl": "https://storage.arky.io/prod",
   "siteUrl": "https://arky.io",
   "businessId": "4429b3d1-e12f-43d4-8232-62da8ae3da85"
 }

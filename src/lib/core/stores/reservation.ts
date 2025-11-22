@@ -2,7 +2,7 @@
 import { computed, deepMap } from "nanostores";
 import { persistentAtom } from "@nanostores/persistent";
 import { getLocalizedString, getLocale, getLocaleFromUrl } from "@lib/i18n/index";
-import { API_URL, STORAGE_URL } from "../config";
+import { API_URL } from "../config";
 import { arky } from "@lib/index";
 import {
 	selectedMarket,
@@ -78,7 +78,6 @@ export const store = deepMap<ReservationStoreState>({
 	guestToken: null,
 	service: null,
 	apiUrl: API_URL,
-	storageUrl: STORAGE_URL,
 	timezone: arky.utils.findTimeZone(arky.utils.tzGroups),
 	tzGroups: arky.utils.tzGroups,
 	items: [],

@@ -8,8 +8,6 @@
 	import appConfig from '../../../appConfig';
 	import { arky } from '@lib/index';
 
-	const STORAGE_URL = appConfig.storageUrl;
-
 	export let product;
 
 	let loading = false;
@@ -95,8 +93,8 @@
 				if (!original) return null;
 
 				return {
-					url: `${STORAGE_URL}/${original}`,
-					thumbnail: `${STORAGE_URL}/${thumbnail || original}`,
+					url: original,
+					thumbnail: thumbnail || original,
 					alt: product.name
 				};
 			}

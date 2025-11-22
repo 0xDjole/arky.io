@@ -6,7 +6,6 @@
 	import { showToast } from '@lib/toast.js';
 	import { store } from '@lib/core/stores/eshop';
 
-	const STORAGE_URL = appConfig.storageUrl;
 	const locale = getLocale();
 
 	let products = [];
@@ -135,7 +134,7 @@ function displayVariantPrice(variant) {
 			{#each products as product}
 				{@const defaultVariant = getDefaultVariant(product)}
 			    {@const thumbPath = getGalleryThumbnail(product.blocks)}
-			    {@const thumbUrl = thumbPath ? `${STORAGE_URL}/${thumbPath}` : null}
+			    {@const thumbUrl = thumbPath || null}
 			    {@const productSlug = product.seo?.slug?.[locale] || product.seo?.slug?.en || product.id}
 
 
@@ -148,7 +147,7 @@ function displayVariantPrice(variant) {
 						<img
 							src={thumbUrl}
 							alt={product.name}
-							referrerpolicy="no-referrer"
+							
 							class="w-full h-48 object-cover"
 						/>
 					{:else}
