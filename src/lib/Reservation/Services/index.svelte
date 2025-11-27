@@ -1,9 +1,10 @@
 <script>
 	import { onMount } from 'svelte';
 	import { getLocale, getRelativeLocaleUrl } from "@lib/i18n";
-import { store as reservationStore, actions as reservationActions, initReservationStore } from '@lib/core/stores/reservation';
-import { businessActions } from '@lib/core/stores/business';
-import { arky } from '@lib/index';
+	import { store as reservationStore, actions as reservationActions, initReservationStore } from '@lib/core/stores/reservation';
+	import { businessActions } from '@lib/core/stores/business';
+	import { arky } from '@lib/index';
+	import { getGalleryThumbnail } from '@lib/utils/gallery';
 	import appConfig from '../../../appConfig';
 
 	const API_URL = appConfig.apiUrl;
@@ -16,35 +17,6 @@ import { arky } from '@lib/index';
 
 	// Get currency from reservation store
 	$: businessCurrency = $reservationStore.currency;
-
-	function getGalleryThumbnail(blocks) {
-		if (!blocks || !Array.isArray(blocks)) return null;
-
-		const galleryBlock = blocks.find((block) => block.key === 'gallery');
-		if (!galleryBlock?.value?.length) return null;
-
-		const items = galleryBlock.value
-			.map((itemBlock) => {
-				if (!itemBlock.value || !Array.isArray(itemBlock.value)) return null;
-
-				const isThumbnailBlock = itemBlock.value.find((b) => b.key === 'is_thumbnail');
-				const mediaBlock = itemBlock.value.find((b) => b.key === 'media');
-
-				if (!mediaBlock?.value?.[0]) return null;
-
-				return {
-					isThumbnail: isThumbnailBlock?.value?.[0] || false,
-					media: mediaBlock.value[0]
-				};
-			})
-			.filter(Boolean);
-
-		if (!items.length) return null;
-
-		const item = items.find((g) => g.isThumbnail) || items[0];
-		const res = item.media?.resolutions?.thumbnail || item.media?.resolutions?.original;
-		return res?.url || null;
-	}
 
 	function displayServicePrice(service) {
 		// Prefer new market-based prices
