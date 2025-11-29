@@ -55,7 +55,6 @@
 						{#if $store.selectedMethod === 'INQUIRY'}{t('reservation.inquiry')}{/if}
 						{#if $store.selectedMethod === 'STANDARD_SPECIFIC'}{t('reservation.specificStandard')}{/if}
 						{#if $store.selectedMethod === 'INQUIRY_SPECIFIC'}{t('reservation.specificInquiry')}{/if}
-						{#if $store.selectedMethod === 'ORDER'}{t('reservation.directOrder')}{/if}
 					</p>
 					{#if $store.selectedProvider}
 						<p class="text-secondary mt-1 text-sm">{t('reservation.providerName')}: {$store.selectedProvider.name}</p>

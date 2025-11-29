@@ -216,7 +216,7 @@ export const actions = {
 		if (state.selectedMethod?.includes("SPECIFIC")) {
 			active.push({ name: "provider", label: "Choose Provider" });
 		}
-		if (state.selectedMethod && state.selectedMethod !== "ORDER") {
+		if (state.selectedMethod) {
 			active.push({
 				name: "datetime",
 				label: state.isMultiDay ? "Choose Date Range" : "Choose Date & Time",
@@ -328,14 +328,7 @@ export const actions = {
 
 		this.determineTotalSteps();
 
-		if (method === "ORDER") {
-			this.handleOrderMethod();
-			if (advance) {
-				const reviewStep = this.getStepNumberByName("review");
-				if (reviewStep) this.goToStep(reviewStep);
-				return;
-			}
-		} else if (method.includes("SPECIFIC")) {
+		if (method.includes("SPECIFIC")) {
 			await this.loadProviders();
 			const state = store.get();
 			if (advance && state.providers.length === 1) {
@@ -353,20 +346,6 @@ export const actions = {
 		if (advance && store.get().currentStep < store.get().totalSteps) {
 			this.nextStep();
 		}
-	},
-
-	handleOrderMethod() {
-		const state = store.get();
-		const now = new Date();
-		const dur = state.service.durations?.reduce((a: number, c: any) => a + c.duration, 0) || 3600;
-		const from = Math.floor(now.getTime() / 1000);
-		const to = from + dur;
-
-		store.setKey("selectedSlot", {
-			from,
-			to,
-			timeText: formatTimeSlot(from, to, state.timezone),
-		});
 	},
 
 	// Provider management
