@@ -3,6 +3,7 @@ import { Icon } from "astro-icon/components";
 import Button from "@components/Button/Button.astro";
 import Switch from "@components/Switch";
 import { arky } from "@lib/index";
+import PricingHighlight from "@components/FeatureFlag/PricingHighlight.svelte";
 
 const websiteCollection = await arky.cms.getCollection({ id: "website" });
 const pricingData = websiteCollection.getBlockValues("pricing_plans");
@@ -33,101 +34,7 @@ const pricingData = websiteCollection.getBlockValues("pricing_plans");
 			</label>
 		</div>
 
-		<div
-			class="pricing-grid gsap-stagger mx-auto mt-12 grid w-full max-w-7xl gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-			style="overflow: visible; perspective: 800px;"
-		>
-			{
-				pricingData.map((plan) => (
-					<div
-						class:list={[
-							"pricing-plan hover-lift gsap-stagger-item relative mx-auto h-full w-full max-w-sm overflow-hidden rounded-2xl transition-all duration-300",
-							{
-								"bg-gradient-primary": plan.featured === true,
-								"bg-tertiary": plan.featured !== true,
-							},
-						]}
-					>
-						<div class="relative h-full p-px">
-							<div class="bg-card relative z-10 flex h-full flex-col overflow-hidden rounded-[calc(1rem-1px)]">
-								{plan.featured === true && (
-									<div
-										class="glow-primary absolute top-0 left-0 -z-10 mx-auto aspect-square w-full max-w-7xl -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl"
-										aria-hidden="true"
-									/>
-								)}
-								<div class="mx-auto flex h-full w-full max-w-[20rem] flex-col px-6 pb-6">
-									<div class="flex w-full justify-between pt-6">
-										<h3
-											class:list={[
-												"text-lg font-semibold",
-												{
-													"main-text-gradient": plan.featured === true,
-													"text-primary": plan.featured !== true,
-												},
-											]}
-										>
-											{plan.name}
-										</h3>
-										{plan.featured === true && (
-											<div class="flex w-full items-center justify-end">
-												<div class="bg-brand text-brand flex gap-2 rounded-full px-3 py-1 text-sm font-medium">
-													<p class="flex items-center">Most popular</p>
-												</div>
-											</div>
-										)}
-									</div>
-									<div class="pt-3">
-										<p class="text-secondary">{plan.description}</p>
-										<p class="mt-3 font-semibold">
-											{plan.custom === true ? (
-												<span class="text-price text-5xl font-semibold">Custom</span>
-											) : (
-												<>
-													<div class="pricing-monthly">
-														<span class="text-price text-5xl font-semibold">${plan.monthly}</span>
-														<span class="text-secondary text-3xl">/mo</span>
-														<br />
-														<p class="text-muted mt-1 text-sm font-normal">(paid monthly)</p>
-													</div>
-													<div class="pricing-yearly hidden">
-														<span class="text-price text-5xl font-semibold">${plan.yearly}</span>
-														<span class="text-secondary text-3xl">/mo</span>
-														<br />
-														<p class="text-muted mt-1 text-sm font-normal">(paid yearly)</p>
-													</div>
-												</>
-											)}
-										</p>
-									</div>
-									<ul class="my-6 flex w-full flex-col gap-2">
-										{plan.features.map((feature) => (
-											<li class="text-secondary flex items-center">
-												<Icon
-													name="mdi:check"
-													class="text-check mr-2 h-5 w-5 flex-shrink-0"
-													aria-hidden="true"
-												/>
-												<span class="inline">{feature}</span>
-											</li>
-										))}
-									</ul>
-									<div class="mt-auto">
-										<Button
-											variant={plan.featured === true ? "primary" : "outline"}
-											href="#contact-form"
-											class="w-full"
-										>
-											Get Started
-										</Button>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-				))
-			}
-		</div>
+		<PricingHighlight client:load plans={pricingData} />
 	</div>
 </section>
 

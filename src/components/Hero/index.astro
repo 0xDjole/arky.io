@@ -2,6 +2,7 @@
 import { Icon } from "astro-icon/components";
 import { arky } from "@lib/index";
 import Button from "@components/Button/Button.astro";
+import HeroCTA from "@components/FeatureFlag/HeroCTA.svelte";
 
 const websiteCollection = await arky.cms.getCollection({ id: "website" });
 const info = websiteCollection.getBlock("info");
@@ -48,14 +49,7 @@ const heroImage = info.heroImage;
 				<span class="subtitle-line">Newsletter & Analytics - All in One Platform</span>
 			</p>
 
-			<div class="hero-cta">
-				<button class="cta-button">
-					<span class="cta-text">Get Started</span>
-					<div class="cta-arrow">
-						<Icon name="mdi:arrow-right" />
-					</div>
-				</button>
-			</div>
+			<HeroCTA client:load />
 		</div>
 
 		<!-- Stats Cards -->

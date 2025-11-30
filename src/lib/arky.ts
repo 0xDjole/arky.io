@@ -6,7 +6,7 @@ const API_URL = appConfig.apiUrl;
 // Build-time admin token for SSR (private, not exposed to client)
 const ARKY_TOKEN = import.meta.env.ARKY_TOKEN || "";
 
-export const arky = createArkySDK({
+export const arky = await createArkySDK({
 	baseUrl: API_URL,
 	businessId: appConfig.businessId,
 	market: "us",

@@ -1,28 +1,22 @@
 <script>
   import { onMount } from 'svelte';
   import { showToast } from '../../lib/toast.js';
-  import appConfig from '../../appConfig';
-  
-  const API_URL = appConfig.apiUrl;
-  const BUSINESS_ID = appConfig.businessId;
-  
+  import { arky } from '../../lib/arky';
+
   let collection = null;
   let form = {};
   let isLoading = true;
   let isSubmitting = false;
-  
+
   onMount(async () => {
     await loadSchema();
   });
-  
+
   async function loadSchema() {
     isLoading = true;
     try {
-      const res = await fetch(
-        `${API_URL}/v1/businesses/${BUSINESS_ID}/collections/contact_form`
-      );
-      collection = await res.json();
-      
+      collection = await arky.cms.getCollection({ id: 'contact_form' });
+
       collection.blocks.forEach((f) => {
         form[f.key] = "";
       });
@@ -32,32 +26,23 @@
       isLoading = false;
     }
   }
-  
+
   async function submit() {
     isSubmitting = true;
-    
-    const payload = {
-      collectionId: collection.id,
-      blocks: collection.blocks.map((f) => ({
-        ...f,
-        value: [form[f.key]],
-      })),
-    };
-    
+
     try {
-      const r = await fetch(
-        `${API_URL}/v1/businesses/${BUSINESS_ID}/collections/contact_form/entries`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
-      
-      if (!r.ok) throw new Error(await r.text());
-      
+      await arky.cms.createCollectionEntry({
+        collectionId: collection.id,
+        name: { en: 'Contact Form Submission' },
+        type: 'DATA',
+        blocks: collection.blocks.map((f) => ({
+          ...f,
+          value: [form[f.key]],
+        })),
+      });
+
       showToast("Thanks! Your message was submitted.", "success", 5000);
-      
+
       collection.blocks.forEach((f) => {
         form[f.key] = "";
       });
