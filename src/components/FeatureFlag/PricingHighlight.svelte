@@ -74,7 +74,7 @@
 						</div>
 						<div class="pt-3">
 							<p class="text-secondary">{plan.description}</p>
-							<p class="mt-3 font-semibold">
+							<div class="mt-3 font-semibold">
 								{#if plan.custom}
 									<span class="text-price text-5xl font-semibold">Custom</span>
 								{:else}
@@ -82,16 +82,16 @@
 										<span class="text-price text-5xl font-semibold">${plan.monthly}</span>
 										<span class="text-secondary text-3xl">/mo</span>
 										<br />
-										<p class="text-muted mt-1 text-sm font-normal">(paid monthly)</p>
+										<span class="text-muted mt-1 text-sm font-normal block">(paid monthly)</span>
 									</div>
 									<div class="pricing-yearly hidden">
 										<span class="text-price text-5xl font-semibold">${plan.yearly}</span>
 										<span class="text-secondary text-3xl">/mo</span>
 										<br />
-										<p class="text-muted mt-1 text-sm font-normal">(paid yearly)</p>
+										<span class="text-muted mt-1 text-sm font-normal block">(paid yearly)</span>
 									</div>
 								{/if}
-							</p>
+							</div>
 						</div>
 						<ul class="my-6 flex w-full flex-col gap-2">
 							{#each plan.features || [] as feature}
