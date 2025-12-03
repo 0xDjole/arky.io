@@ -260,7 +260,7 @@ export const actions = {
 				success: true,
 				data: {
 					orderId: response.orderId,
-					orderNumber: response.orderNumber,
+					number: response.number,
 					clientSecret: response.clientSecret,
 				},
 			};
