@@ -1,10 +1,20 @@
 <script>
 	import Icon from '@iconify/svelte';
 	import { store, actions } from '@lib/core/stores/reservation';
-	import { t } from '../../../lib/i18n/index';
+	import { t, getLocale } from '../../../lib/i18n/index';
 
-	function getFirstGalleryMedia(blocks) {
+	const locale = getLocale();
+
+	function getFirstMedia(blocks) {
 		if (!blocks || !Array.isArray(blocks)) return null;
+
+		const mediaBlock = blocks.find((block) => block.key === 'media');
+		if (mediaBlock?.value?.length) {
+			const media = mediaBlock.value[0];
+			if (media && typeof media !== 'string' && media.resolutions) {
+				return media;
+			}
+		}
 
 		const galleryBlock = blocks.find((block) => block.key === 'gallery');
 		if (!galleryBlock?.value?.length) return null;
@@ -12,10 +22,9 @@
 		const firstItem = galleryBlock.value[0];
 		if (!firstItem?.value || !Array.isArray(firstItem.value)) return null;
 
-		const mediaBlock = firstItem.value.find((b) => b.key === 'media');
-		const media = mediaBlock?.value?.[0];
+		const nestedMediaBlock = firstItem.value.find((b) => b.key === 'media');
+		const media = nestedMediaBlock?.value?.[0];
 
-		// Check if media is a hydrated object with resolutions, not just a string reference
 		if (!media || typeof media === 'string' || !media.resolutions) {
 			return null;
 		}
@@ -45,7 +54,7 @@
 		{:else}
 			<div class="grid gap-3 sm:grid-cols-2">
 				{#each $store.providers as r (r.id)}
-					{@const media = getFirstGalleryMedia(r.blocks)}
+					{@const media = getFirstMedia(r.blocks)}
 					<button
 						on:click={() => actions.selectProvider(r)}
 						class="flex w-full items-center gap-3 rounded-lg border p-3 transition-colors
@@ -56,8 +65,8 @@
 							<div class="h-10 w-10 flex-shrink-0 overflow-hidden rounded-full">
 								<img
 									src={media.resolutions?.thumbnail?.url ?? media.resolutions?.original?.url}
-									alt={r.name}
-									
+									alt={r.name?.[locale] || r.name?.en || r.name}
+
 									class="h-full w-full object-cover"
 								/>
 							</div>
@@ -69,13 +78,13 @@
 
 						<div class="min-w-0 flex-1 text-left">
 							<div class="flex items-center">
-								<h4 class="truncate text-base font-medium text-primary">{r.name}</h4>
+								<h4 class="truncate text-base font-medium text-primary">{r.name?.[locale] || r.name?.en || r.name}</h4>
 								{#if $store.selectedProvider?.id === r.id}
 									<Icon icon="mdi:check-circle" class="h-5 w-5 text-secondary ml-2" />
 								{/if}
 							</div>
 							{#if r.description}
-								<p class="text-secondary truncate text-xs">{r.description}</p>
+								<p class="text-secondary truncate text-xs">{r.description?.[locale] || r.description?.en || r.description}</p>
 							{/if}
 						</div>
 					</button>

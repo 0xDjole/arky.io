@@ -355,8 +355,8 @@ export const actions = {
 
 		try {
 			const { service } = store.get();
-			const providers = await arky.reservation.getProviders({ serviceId: service.id });
-			store.setKey("providers", providers || []);
+			const response = await arky.reservation.getProviders({ serviceId: service.id, limit: 100 });
+			store.setKey("providers", response?.items || []);
 		} catch (e) {
 			console.error("Error loading providers:", e);
 		} finally {

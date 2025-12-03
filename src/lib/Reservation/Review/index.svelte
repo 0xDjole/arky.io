@@ -4,6 +4,8 @@
 	import DynamicForm from '@lib/DynamicForm/index.svelte';
 	import { t, getLocale } from '../../../lib/i18n/index';
 
+	const locale = getLocale();
+
 	function update(idx, v) {
 		const svc = { ...$store.service };
 		const list = [...svc.reservationBlocks];
@@ -57,7 +59,7 @@
 						{#if $store.selectedMethod === 'INQUIRY_SPECIFIC'}{t('reservation.specificInquiry')}{/if}
 					</p>
 					{#if $store.selectedProvider}
-						<p class="text-secondary mt-1 text-sm">{t('reservation.providerName')}: {$store.selectedProvider.name}</p>
+						<p class="text-secondary mt-1 text-sm">{t('reservation.providerName')}: {$store.selectedProvider.name?.[locale] || $store.selectedProvider.name?.en || $store.selectedProvider.name}</p>
 					{/if}
 				</div>
 			</div>
