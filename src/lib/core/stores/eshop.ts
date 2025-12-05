@@ -15,7 +15,14 @@ import {
 import type { EshopCartItem, EshopStoreState, Block, Price, Payment, Quote } from "../types";
 import { onSuccess, onError } from "@lib/utils/notify";
 import { PaymentMethodType } from "../types";
-// Toast notifications should be handled by UI layer
+import { getLocale } from "@lib/i18n";
+
+function getLocalizedText(value: any): string {
+	if (!value) return '';
+	if (typeof value === 'string') return value;
+	const locale = getLocale();
+	return value[locale] || value.en || Object.values(value)[0] || '';
+}
 
 // Frontend cart items
 export const cartItems = persistentAtom<EshopCartItem[]>("eshopCart", [], {
@@ -122,7 +129,7 @@ export const actions = {
 				id: crypto.randomUUID(),
 				productId: product.id,
 				variantId: variant.id,
-				productName: product.name,
+				productName: getLocalizedText(product.name),
 				productSlug:
 					product.seo?.slug?.en ||
 					product.seo?.slug?.[Object.keys(product.seo?.slug || {})[0]] ||

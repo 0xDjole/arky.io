@@ -2,35 +2,9 @@
 	import Icon from '@iconify/svelte';
 	import { store, actions } from '@lib/core/stores/reservation';
 	import { t, getLocale } from '../../../lib/i18n/index';
+	import { getFirstGalleryMedia } from '@lib/utils/gallery';
 
 	const locale = getLocale();
-
-	function getFirstMedia(blocks) {
-		if (!blocks || !Array.isArray(blocks)) return null;
-
-		const mediaBlock = blocks.find((block) => block.key === 'media');
-		if (mediaBlock?.value?.length) {
-			const media = mediaBlock.value[0];
-			if (media && typeof media !== 'string' && media.resolutions) {
-				return media;
-			}
-		}
-
-		const galleryBlock = blocks.find((block) => block.key === 'gallery');
-		if (!galleryBlock?.value?.length) return null;
-
-		const firstItem = galleryBlock.value[0];
-		if (!firstItem?.value || !Array.isArray(firstItem.value)) return null;
-
-		const nestedMediaBlock = firstItem.value.find((b) => b.key === 'media');
-		const media = nestedMediaBlock?.value?.[0];
-
-		if (!media || typeof media === 'string' || !media.resolutions) {
-			return null;
-		}
-
-		return media;
-	}
 </script>
 
 {#if $store.selectedMethod?.includes('SPECIFIC')}
@@ -54,7 +28,7 @@
 		{:else}
 			<div class="grid gap-3 sm:grid-cols-2">
 				{#each $store.providers as r (r.id)}
-					{@const media = getFirstMedia(r.blocks)}
+					{@const media = getFirstGalleryMedia(r.blocks)}
 					<button
 						on:click={() => actions.selectProvider(r)}
 						class="flex w-full items-center gap-3 rounded-lg border p-3 transition-colors

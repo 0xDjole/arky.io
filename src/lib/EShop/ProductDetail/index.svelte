@@ -7,6 +7,10 @@
 	import Icon from '@iconify/svelte';
 	import appConfig from '../../../appConfig';
 	import { arky } from '@lib/index';
+	import { getLocale } from '@lib/i18n';
+	import { getGalleryThumbnail, extractGalleryItems } from '@lib/utils/gallery';
+
+	const locale = getLocale();
 
 	export let product;
 
@@ -22,11 +26,7 @@
 		
 		try {
 			addingToCart = true;
-			
-			// Use frontend cart store instead of backend API
 			actions.addItem(product, selectedVariant, quantity);
-			
-			// Reset quantity after adding to cart
 			quantity = 1;
 		} catch (err) {
 			showToast(`Error: ${err.message}`, 'error', 5000);
@@ -47,40 +47,14 @@
 		return arky.utils.getMarketPrice(prices, marketId);
 	}
 
-	function extractGalleryFromBlocks(blocks) {
-		if (!blocks || !Array.isArray(blocks)) return [];
-
-		const galleryBlock = blocks.find((block) => block.key === 'gallery');
-		if (!galleryBlock?.value?.length) return [];
-
-		return galleryBlock.value
-			.map((itemBlock) => {
-				if (!itemBlock.value || !Array.isArray(itemBlock.value)) return null;
-
-				const isThumbnailBlock = itemBlock.value.find((b) => b.key === 'is_thumbnail');
-				const mediaBlock = itemBlock.value.find((b) => b.key === 'media');
-
-				if (!mediaBlock?.value?.[0]) return null;
-
-				return {
-					isThumbnail: isThumbnailBlock?.value?.[0] || false,
-					media: mediaBlock.value[0]
-				};
-			})
-			.filter(Boolean);
-	}
-
-	function getGalleryThumbnail(blocks) {
-		const gallery = extractGalleryFromBlocks(blocks);
-		if (!gallery.length) return null;
-
-		const item = gallery.find((g) => g.isThumbnail) || gallery[0];
-		const res = item.media?.resolutions?.thumbnail || item.media?.resolutions?.original;
-		return res?.url || null;
+	function getLocalizedText(value) {
+		if (!value) return '';
+		if (typeof value === 'string') return value;
+		return value[locale] || value.en || Object.values(value)[0] || '';
 	}
 
 	function getProductImages(product) {
-		const gallery = extractGalleryFromBlocks(product.blocks);
+		const gallery = extractGalleryItems(product.blocks);
 		if (gallery.length === 0) {
 			return [];
 		}
@@ -95,7 +69,7 @@
 				return {
 					url: original,
 					thumbnail: thumbnail || original,
-					alt: product.name
+					alt: getLocalizedText(product.name)
 				};
 			}
 			return null;
@@ -190,7 +164,7 @@
 					<!-- Product Details -->
 					<div class="space-y-6">
 						<div>
-							<h1 class="text-3xl font-bold text-foreground mb-2">{product.name}</h1>
+							<h1 class="text-3xl font-bold text-foreground mb-2">{getLocalizedText(product.name)}</h1>
 							<div class="flex items-center gap-2 mb-4">
 								<span class="text-sm text-muted-foreground bg-muted px-2 py-1 rounded">
 									{product.productType}
@@ -199,9 +173,9 @@
 									SKU: {selectedVariant?.sku || 'N/A'}
 								</span>
 							</div>
-							
+
 							{#if product.description}
-								<p class="text-muted-foreground leading-relaxed">{product.description}</p>
+								<p class="text-muted-foreground leading-relaxed">{getLocalizedText(product.description)}</p>
 							{/if}
 						</div>
 

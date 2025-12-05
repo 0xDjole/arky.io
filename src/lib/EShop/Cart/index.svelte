@@ -303,7 +303,6 @@ async function handleApplyPromoCode(code: string) {
 								updatedBlocks[idx] = { ...block, value: Array.isArray(value) ? value : [value] };
 								orderBlocks = updatedBlocks;
 
-								// Refresh quote if location (country) changed
 								if (block.key === 'location' && block.type === 'GEO_LOCATION') {
 									refreshQuote();
 								}

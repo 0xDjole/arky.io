@@ -5,7 +5,6 @@
 	export let variant = 'badges'; // 'badges' | 'inline' | 'list'
 	export let label = '';
 
-	// Use shared block text value extraction
 	function getBlockValue(block) {
 		return getBlockTextValue(block, 'en');
 	}

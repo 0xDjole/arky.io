@@ -5,6 +5,7 @@
 	import appConfig from '../../../appConfig';
 	import { showToast } from '@lib/toast.js';
 	import { store } from '@lib/core/stores/eshop';
+	import { getGalleryThumbnail } from '@lib/utils/gallery';
 
 	const locale = getLocale();
 
@@ -31,40 +32,17 @@
 		}
 	}
 
-	function getGalleryThumbnail(blocks) {
-		if (!blocks || !Array.isArray(blocks)) return null;
-
-		const galleryBlock = blocks.find((block) => block.key === 'gallery');
-		if (!galleryBlock?.value?.length) return null;
-
-		const items = galleryBlock.value
-			.map((itemBlock) => {
-				if (!itemBlock.value || !Array.isArray(itemBlock.value)) return null;
-
-				const isThumbnailBlock = itemBlock.value.find((b) => b.key === 'is_thumbnail');
-				const mediaBlock = itemBlock.value.find((b) => b.key === 'media');
-
-				if (!mediaBlock?.value?.[0]) return null;
-
-				return {
-					isThumbnail: isThumbnailBlock?.value?.[0] || false,
-					media: mediaBlock.value[0]
-				};
-			})
-			.filter(Boolean);
-
-		if (!items.length) return null;
-
-		const item = items.find((g) => g.isThumbnail) || items[0];
-		const res = item.media?.resolutions?.thumbnail || item.media?.resolutions?.original;
-		return res?.url || null;
-	}
-
 	function getDefaultVariant(product) {
 		return product.variants?.find(v => v.isDefault) || product.variants?.[0];
 	}
 
-function displayVariantPrice(variant) {
+	function getLocalizedText(value) {
+		if (!value) return '';
+		if (typeof value === 'string') return value;
+		return value[locale] || value.en || Object.values(value)[0] || '';
+	}
+
+	function displayVariantPrice(variant) {
 		if (!variant) return '';
 		if (variant.prices && Array.isArray(variant.prices) && variant.prices.length > 0) {
 			const storeData = store.get();
@@ -146,8 +124,8 @@ function displayVariantPrice(variant) {
 					{#if thumbUrl}
 						<img
 							src={thumbUrl}
-							alt={product.name}
-							
+							alt={getLocalizedText(product.name)}
+
 							class="w-full h-48 object-cover"
 						/>
 					{:else}
@@ -158,11 +136,11 @@ function displayVariantPrice(variant) {
 
 					<div class="p-6">
 						<h3 class="text-lg font-semibold text-primary mb-2">
-							{product.name}
+							{getLocalizedText(product.name)}
 						</h3>
 						{#if product.description}
 							<p class="text-muted text-sm mb-3">
-								{product.description}
+								{getLocalizedText(product.description)}
 							</p>
 						{/if}
 

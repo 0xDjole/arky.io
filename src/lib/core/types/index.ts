@@ -123,35 +123,35 @@ export interface PaymentProviderConfig {
 	webhookSecret: string;
 }
 
-// Zone types (geography-based configuration within markets)
-export interface ZonePaymentMethod {
-	id: string;
+export interface ShippingWeightTier {
+	upToGrams: number;
+	amount: number;
 }
 
 export interface ZoneShippingMethod {
 	id: string;
-	amount: number; // Shipping cost in minor units (zone-specific)
+	amount: number;
+	freeAbove?: number;
+	weightTiers?: ShippingWeightTier[];
 }
 
-export interface MarketZone {
+export interface Zone {
+	id: string;
+	name: string;
+	marketId: string;
+	countries: string[];
+	states: string[];
+	cities: string[];
+	postalCodes: string[];
 	taxBps: number;
-	zoneId: string;
-	paymentMethods: ZonePaymentMethod[];
+	paymentMethods: string[];
 	shippingMethods: ZoneShippingMethod[];
 }
 
-// Market types (business-owned) - camelCase for frontend
-export interface CountryConfig { code: string; taxBps: number }
 export interface Market {
 	id: string;
-	name: string;
 	currency: string;
 	taxMode: "INCLUSIVE" | "EXCLUSIVE";
-	zones: MarketZone[]; // NEW: Zone-based configuration
-	shippingMethods: ShippingMethod[]; // Master list of available methods
-	// Deprecated fields (kept for backwards compatibility during migration)
-	countries?: CountryConfig[];
-	paymentMethods?: BusinessPaymentMethod[];
 }
 
 export interface ShippingMethod {
@@ -172,11 +172,13 @@ export interface PaymentMethod {
 	type: PaymentMethodType;
 }
 
-// Business types
 export interface BusinessConfig {
 	orderBlocks?: any[];
 	reservationBlocks?: any[];
 	markets?: Market[];
+	zones?: Zone[];
+	shippingMethods?: ShippingMethod[];
+	paymentMethods?: PaymentMethod[];
 	paymentProvider?: PaymentProviderConfig;
 	aiProvider?: any;
 }

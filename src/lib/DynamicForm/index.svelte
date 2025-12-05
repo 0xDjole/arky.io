@@ -10,7 +10,7 @@
 	import CheckboxInput from './CheckboxInput.svelte';
 import RangeInput from './RangeInput.svelte';
 import { countries } from 'countries-list';
-import { selectedMarket, zoneDefinitions } from '../core/stores/business';
+import { selectedMarket, zones, getZonesForMarket } from '../core/stores/business';
 
 const ALL_COUNTRIES = Object.entries(countries)
     .map(([iso, data]) => ({
@@ -21,26 +21,21 @@ const ALL_COUNTRIES = Object.entries(countries)
 
 let availableCountries = $derived.by(() => {
     const market = $selectedMarket;
-    const zones = $zoneDefinitions;
+    if (!market) return [];
 
-    if (!market || !market.zones || market.zones.length === 0) {
-        return [];
-    }
+    const marketZones = getZonesForMarket(market.id);
+    if (marketZones.length === 0) return [];
 
-    const relevantZoneIds = market.zones.map(mz => mz.zoneId);
-    const relevantZones = zones.filter(z => relevantZoneIds.includes(z.id));
-
-    const hasGlobalZone = relevantZones.some(z => z.countries.length === 0);
+    const hasGlobalZone = marketZones.some(z => z.countries.length === 0);
     if (hasGlobalZone) {
         return ALL_COUNTRIES;
     }
 
     const uniqueCountryCodes = new Set<string>();
-    relevantZones.forEach(zone => {
+    marketZones.forEach(zone => {
         zone.countries.forEach(countryCode => uniqueCountryCodes.add(countryCode));
     });
 
-    // Map ISO codes to full country objects
     return Array.from(uniqueCountryCodes)
         .map(iso => ALL_COUNTRIES.find(c => c.iso === iso))
         .filter(c => c !== undefined)
@@ -132,14 +127,10 @@ let availableCountries = $derived.by(() => {
 
 	function getAvailableStates(selectedCountry: string) {
 		const market = $selectedMarket;
-		const zones = $zoneDefinitions;
-
 		if (!market || !selectedCountry) return [];
 
-		const relevantZoneIds = market.zones.map(mz => mz.zoneId);
-		const relevantZones = zones.filter(z => relevantZoneIds.includes(z.id));
-
-		const matchingZones = relevantZones.filter(z =>
+		const marketZones = getZonesForMarket(market.id);
+		const matchingZones = marketZones.filter(z =>
 			z.countries.length === 0 || z.countries.includes(selectedCountry)
 		);
 
@@ -153,14 +144,10 @@ let availableCountries = $derived.by(() => {
 
 	function getAvailableCities(selectedCountry: string, selectedState: string | null) {
 		const market = $selectedMarket;
-		const zones = $zoneDefinitions;
-
 		if (!market || !selectedCountry) return [];
 
-		const relevantZoneIds = market.zones.map(mz => mz.zoneId);
-		const relevantZones = zones.filter(z => relevantZoneIds.includes(z.id));
-
-		const matchingZones = relevantZones.filter(z => {
+		const marketZones = getZonesForMarket(market.id);
+		const matchingZones = marketZones.filter(z => {
 			const countryMatch = z.countries.length === 0 || z.countries.includes(selectedCountry);
 			const stateMatch = !selectedState || z.states.length === 0 || z.states.includes(selectedState);
 			return countryMatch && stateMatch;
