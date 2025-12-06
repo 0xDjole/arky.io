@@ -156,15 +156,13 @@ export interface Market {
 
 export interface ShippingMethod {
     id: string;
-    type: 'SHIPPING' | 'PICKUP';
     taxable: boolean;
-    etaText: string; // e.g., "3-5 business days"
-    location?: Location; // Pickup address (only for PICKUP type)
+    etaText: string;
+    pickupLocation?: Location;
 }
 
-// Helper type: ShippingMethod enriched with zone-specific pricing (used in frontend)
 export interface ZoneResolvedShippingMethod extends ShippingMethod {
-	zoneAmount: number; // Zone-specific price in minor units
+	zoneAmount: number;
 }
 
 export interface PaymentMethod {

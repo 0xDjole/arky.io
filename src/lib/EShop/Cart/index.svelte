@@ -318,6 +318,7 @@ async function handleApplyPromoCode(code: string) {
 								<div class="grid gap-3">
 								{#each availableShippingMethods as method}
 										{@const rate = method.zoneAmount || 0}
+										{@const isPickup = !!method.pickupLocation}
 										<label class="flex items-center gap-3 p-3 border rounded-lg cursor-pointer">
 											<input type="radio" name="shipping" value={method.id}
 												checked={selectedShippingMethodId === method.id}
@@ -326,13 +327,13 @@ async function handleApplyPromoCode(code: string) {
 													refreshQuote();
 												}} />
 											<span class="flex-1">
-												{(method.type || 'SHIPPING') + ' · ' + (method.id?.toUpperCase?.() || method.id)}
+												{(isPickup ? '📍 PICKUP' : '📦 DELIVERY') + ' · ' + (method.id?.toUpperCase?.() || method.id)}
 												{#if method.etaText}
 													<span class="block text-xs text-muted-foreground">{method.etaText}</span>
 												{/if}
-												{#if method.type === 'PICKUP' && method.location}
+												{#if isPickup && method.pickupLocation}
 													<span class="block text-xs text-muted-foreground mt-1">
-														Pickup at: {method.location.address || ''}{method.location.city ? `, ${method.location.city}` : ''}
+														Pickup at: {method.pickupLocation.address || ''}{method.pickupLocation.city ? `, ${method.pickupLocation.city}` : ''}
 													</span>
 												{/if}
 											</span>
