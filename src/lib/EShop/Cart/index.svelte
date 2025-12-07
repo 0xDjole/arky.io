@@ -36,7 +36,8 @@
 
     const availablePaymentMethods = $derived.by(() => {
         if (!countryCode) return [];
-        return getPaymentMethodsForCountry(countryCode);
+        const methods = getPaymentMethodsForCountry(countryCode);
+        return methods.map(pm => pm.type);
     });
 
     $effect(() => {
@@ -327,7 +328,7 @@ async function handleApplyPromoCode(code: string) {
 													refreshQuote();
 												}} />
 											<span class="flex-1">
-												{(isPickup ? '📍 PICKUP' : '📦 DELIVERY') + ' · ' + (method.id?.toUpperCase?.() || method.id)}
+												{(isPickup ? '📍 PICKUP' : '📦 DELIVERY') + ' · ' + (method.name?.en || method.name?.[Object.keys(method.name || {})[0]] || method.id)}
 												{#if method.etaText}
 													<span class="block text-xs text-muted-foreground">{method.etaText}</span>
 												{/if}

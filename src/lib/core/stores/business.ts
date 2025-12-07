@@ -5,7 +5,6 @@ import type {
 	Business,
 	Market,
 	ShippingMethod,
-	ZoneResolvedShippingMethod,
 	Zone,
 	PaymentMethod,
 	PaymentProviderConfig,
@@ -43,16 +42,6 @@ export const zones = computed(businessStore, (state) => {
 	return state.data.configs.zones;
 });
 
-export const shippingMethodDefinitions = computed(businessStore, (state) => {
-	if (!state.data?.configs?.shippingMethods) return [];
-	return state.data.configs.shippingMethods;
-});
-
-export const paymentMethodDefinitions = computed(businessStore, (state) => {
-	if (!state.data?.configs?.paymentMethods) return [];
-	return state.data.configs.paymentMethods;
-});
-
 export const getZonesForMarket = (marketId: string): Zone[] => {
 	const allZones = zones.get();
 	return allZones.filter(z => z.marketId === marketId);
@@ -81,56 +70,39 @@ export const getZoneIdForCountry = (countryCode: string): string | null => {
 	return zone?.id || null;
 };
 
-export const getShippingMethodsForCountry = (countryCode: string): ZoneResolvedShippingMethod[] => {
-	const masterShippingMethods = shippingMethodDefinitions.get();
-	if (!masterShippingMethods || masterShippingMethods.length === 0) return [];
-
+// Get shipping methods directly from zone (no more master list)
+export const getShippingMethodsForCountry = (countryCode: string): ShippingMethod[] => {
 	const zone = getZoneForCountry(countryCode);
 	if (!zone) return [];
-
-	const zoneShippingMethods = zone.shippingMethods || [];
-	return zoneShippingMethods.map(zsm => {
-		const baseMethod = masterShippingMethods.find(sm => sm.id === zsm.id);
-		if (!baseMethod) return null;
-
-		return {
-			...baseMethod,
-			zoneAmount: zsm.amount,
-		} as ZoneResolvedShippingMethod;
-	}).filter((sm): sm is ZoneResolvedShippingMethod => sm !== null);
+	return zone.shippingMethods || [];
 };
 
-export const getPaymentMethodsForCountry = (countryCode: string): string[] => {
+// Get payment methods directly from zone (no more master list)
+export const getPaymentMethodsForCountry = (countryCode: string): PaymentMethod[] => {
 	const zone = getZoneForCountry(countryCode);
-	const masterPaymentMethods = paymentMethodDefinitions.get();
+	if (!zone) return [];
+	return zone.paymentMethods || [];
+};
 
-	if (!zone || !masterPaymentMethods) return [];
-
-	const paymentMethodIds = zone.paymentMethods || [];
-	return masterPaymentMethods
-		.filter(pm => paymentMethodIds.includes(pm.id))
-		.map(pm => pm.type);
+// Get payment method types for a country
+export const getPaymentMethodTypesForCountry = (countryCode: string): string[] => {
+	const paymentMethods = getPaymentMethodsForCountry(countryCode);
+	return paymentMethods.map(pm => pm.type);
 };
 
 export const paymentMethods = computed(selectedMarket, (market) => {
 	if (!market) return [];
 
-	const masterPaymentMethods = paymentMethodDefinitions.get();
-	if (!masterPaymentMethods) return [];
-
 	const marketZones = getZonesForMarket(market.id);
-	if (marketZones.length > 0) {
-		const allMethodIds = new Set<string>();
-		marketZones.forEach(zone => {
-			(zone.paymentMethods || []).forEach(pmId => allMethodIds.add(pmId));
-		});
+	if (marketZones.length === 0) return [];
 
-		return masterPaymentMethods
-			.filter(pm => allMethodIds.has(pm.id))
-			.map(pm => pm.type);
-	}
+	// Collect all unique payment method types from all zones in this market
+	const allMethodTypes = new Set<string>();
+	marketZones.forEach(zone => {
+		(zone.paymentMethods || []).forEach(pm => allMethodTypes.add(pm.type));
+	});
 
-	return [];
+	return Array.from(allMethodTypes);
 });
 
 export const paymentConfig = computed(businessStore, (state) => {

@@ -52,7 +52,7 @@
 
 			{#if showShipping && quote.shippingMethod}
 				<div class="flex justify-between text-sm text-card-foreground">
-					<span>Shipping ({quote.shippingMethod.id?.toUpperCase?.() || quote.shippingMethod.id}):</span>
+					<span>Shipping ({quote.shippingMethod.name?.en || quote.shippingMethod.name?.[Object.keys(quote.shippingMethod.name || {})[0]] || quote.shippingMethod.id}):</span>
 					<span class="font-medium">
 						{#if quote.shipping === 0}
 							<span class="text-green-600 font-semibold">FREE</span>
