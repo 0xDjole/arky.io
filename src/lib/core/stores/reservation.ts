@@ -26,8 +26,6 @@ store.setKey("isMultiDay" as any, false);
 
 export const currentStepName = computed(store, (state: any) => {
   if (!state.service) return "";
-  if (!state.selectedMethod && state.service.reservationMethods?.length > 1) return "method";
-  if (state.selectedMethod?.includes("SPECIFIC") && !state.selectedProvider) return "provider";
   if (!state.selectedSlot || !state.dateTimeConfirmed) return "datetime";
   return "review";
 });
@@ -35,10 +33,6 @@ export const currentStepName = computed(store, (state: any) => {
 export const canProceed = computed(store, (state) => {
   const step = currentStepName.get();
   switch (step) {
-    case "method":
-      return !!state.selectedMethod;
-    case "provider":
-      return !!state.selectedProvider;
     case "datetime":
       return state.isMultiDay
         ? !!(state.startDate && state.endDate && state.selectedSlot)
@@ -56,22 +50,13 @@ export const monthYear = computed(store, (state) => {
 
 export const totalSteps = computed(store, (state) => {
   if (!state.service) return 0;
-  let steps = 2;
-  if (state.service.reservationMethods?.length > 1) steps++;
-  if (state.selectedMethod?.includes("SPECIFIC")) steps++;
-  return steps;
+  return 2; // datetime + review
 });
 
 export const steps = computed(store, (state) => {
   const result: Record<number, { name: string }> = {};
   let idx = 1;
 
-  if (state.service?.reservationMethods?.length > 1) {
-    result[idx++] = { name: "method" };
-  }
-  if (state.selectedMethod?.includes("SPECIFIC")) {
-    result[idx++] = { name: "provider" };
-  }
   result[idx++] = { name: "datetime" };
   result[idx++] = { name: "review" };
 
@@ -94,7 +79,7 @@ const formatDateDisplay = (ds: string | null): string => {
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 };
 
-const STEP_ORDER = ["method", "provider", "datetime", "review"];
+const STEP_ORDER = ["datetime", "review"];
 
 const getStepIndex = (step: string): number => {
   const idx = STEP_ORDER.indexOf(step);
@@ -110,17 +95,6 @@ export const actions = {
     store.setKey("service", service);
     if (service.prices?.[0]?.currency) {
       store.setKey("currency" as any, service.prices[0].currency);
-    }
-  },
-
-  handleMethodSelection: async (method: string, advance: boolean = true) => {
-    engine.selectMethod(method);
-    if (method.includes("SPECIFIC")) {
-      const providers = await engine.getProvidersList();
-      store.setKey("providers", providers);
-      if (advance && providers.length === 1) {
-        engine.selectProvider(providers[0]);
-      }
     }
   },
 
@@ -202,7 +176,6 @@ export const actions = {
       ...state.selectedSlot,
       serviceName: state.service?.name?.en || state.service?.name || "",
       date: state.selectedSlot.dateText,
-      reservationMethod: state.selectedMethod,
       serviceBlocks: state.service?.reservationBlocks || [],
     };
     engine.addToCart();
@@ -249,16 +222,6 @@ export const actions = {
     const idx = getStepIndex(current);
     for (let i = idx - 1; i >= 0; i--) {
       const step = STEP_ORDER[i];
-      if (step === "method" && state.service?.reservationMethods?.length > 1) {
-        store.setKey("selectedMethod", null);
-        store.setKey("dateTimeConfirmed" as any, false);
-        return;
-      }
-      if (step === "provider" && state.selectedMethod?.includes("SPECIFIC")) {
-        store.setKey("selectedProvider", null);
-        store.setKey("dateTimeConfirmed" as any, false);
-        return;
-      }
       if (step === "datetime") {
         store.setKey("selectedSlot", null);
         store.setKey("dateTimeConfirmed" as any, false);

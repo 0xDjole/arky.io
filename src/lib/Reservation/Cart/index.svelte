@@ -38,15 +38,9 @@
 	});
 
 	$effect(() => {
-		const isInquiryOnly = ($store.cart || []).every(part => part.reservationMethod?.includes('INQUIRY'));
-
-		if (isInquiryOnly) {
-			selectedPaymentMethod = 'FREE';
-		} else {
-			const allowedMethods = $paymentMethods || ['CASH'];
-			if (allowedMethods.length > 0 && !allowedMethods.includes(selectedPaymentMethod)) {
-				selectedPaymentMethod = allowedMethods[0];
-			}
+		const allowedMethods = $paymentMethods || ['CASH'];
+		if (allowedMethods.length > 0 && !allowedMethods.includes(selectedPaymentMethod)) {
+			selectedPaymentMethod = allowedMethods[0];
 		}
 	});
 
@@ -259,7 +253,7 @@ async function handleApplyPromoCode(code: string) {
 			showShipping={false}
 		/>
 
-		{#if selectedPaymentMethod === 'CREDIT_CARD' && ($store.cart || []).some(part => !part.reservationMethod?.includes('INQUIRY'))}
+		{#if selectedPaymentMethod === 'CREDIT_CARD'}
 			<PaymentForm
 				allowedMethods={$paymentMethods || ['CASH']}
 				paymentProvider={$paymentConfig?.provider}
@@ -271,49 +265,13 @@ async function handleApplyPromoCode(code: string) {
 				variant="reservation"
 			/>
 		{:else}
+			{@const availableMethods = $paymentMethods || ['CASH']}
 			<!-- Payment method selection only -->
 			<div class="space-y-4">
 				<div>
-					{#each [($store.cart || []).every(part => part.reservationMethod?.includes('INQUIRY'))] as isInquiryOnly}
-						{@const availableMethods = isInquiryOnly ? ['FREE'] : ($paymentMethods || ['CASH'])}
-						<div class="grid gap-3" class:grid-cols-2={availableMethods.length > 1} class:grid-cols-1={availableMethods.length === 1}>
-						{#if availableMethods.includes('FREE')}
-							<button 
-								type="button"
-								class="relative flex items-center p-4 rounded-lg cursor-pointer transition-all border-2"
-								class:border-primary={selectedPaymentMethod === 'FREE'}
-								class:bg-primary={selectedPaymentMethod === 'FREE'}
-								class:shadow-sm={selectedPaymentMethod === 'FREE'}
-								class:border-transparent={selectedPaymentMethod !== 'FREE'}
-								class:bg-secondary={selectedPaymentMethod !== 'FREE'}
-								class:hover:bg-tertiary={selectedPaymentMethod !== 'FREE'}
-								onclick={() => selectedPaymentMethod = 'FREE'}
-							>
-								{#if selectedPaymentMethod === 'FREE'}
-									<div class="absolute top-2 right-2">
-										<Icon icon="mdi:check-circle" class="w-5 h-5 text-primary" />
-									</div>
-								{/if}
-								<div class="flex items-center gap-3">
-									<div class="flex items-center justify-center w-12 h-12 rounded-full bg-background">
-										<Icon icon="mdi:gift" class="w-6 h-6 text-primary" />
-									</div>
-									<div class="text-left">
-										<div class="font-semibold" 
-											class:text-primary-foreground={selectedPaymentMethod === 'FREE'}
-											class:text-primary={selectedPaymentMethod !== 'FREE'}
-										>Free Inquiry</div>
-										<div class="text-sm" 
-											class:text-primary-foreground={selectedPaymentMethod === 'FREE'}
-											class:text-secondary={selectedPaymentMethod !== 'FREE'}
-										>No payment required</div>
-									</div>
-								</div>
-							</button>
-						{/if}
-						
+					<div class="grid gap-3" class:grid-cols-2={availableMethods.length > 1} class:grid-cols-1={availableMethods.length === 1}>
 						{#if availableMethods.includes('CASH')}
-							<button 
+							<button
 								type="button"
 								class="relative flex items-center p-4 rounded-lg cursor-pointer transition-all border-2"
 								class:border-primary={selectedPaymentMethod === 'CASH'}
@@ -334,11 +292,11 @@ async function handleApplyPromoCode(code: string) {
 										<Icon icon="mdi:cash" class="w-6 h-6 text-primary" />
 									</div>
 									<div class="text-left">
-										<div class="font-semibold" 
+										<div class="font-semibold"
 											class:text-primary-foreground={selectedPaymentMethod === 'CASH'}
 											class:text-primary={selectedPaymentMethod !== 'CASH'}
 										>Cash Payment</div>
-										<div class="text-sm" 
+										<div class="text-sm"
 											class:text-primary-foreground={selectedPaymentMethod === 'CASH'}
 											class:text-secondary={selectedPaymentMethod !== 'CASH'}
 										>Pay at appointment</div>
@@ -346,9 +304,9 @@ async function handleApplyPromoCode(code: string) {
 								</div>
 							</button>
 						{/if}
-						
+
 						{#if availableMethods.includes('CREDIT_CARD') && $paymentConfig?.provider}
-							<button 
+							<button
 								type="button"
 								class="relative flex items-center p-4 rounded-lg cursor-pointer transition-all border-2"
 								class:border-primary={selectedPaymentMethod === 'CREDIT_CARD'}
@@ -358,9 +316,6 @@ async function handleApplyPromoCode(code: string) {
 								class:bg-secondary={selectedPaymentMethod !== 'CREDIT_CARD'}
 								class:hover:bg-tertiary={selectedPaymentMethod !== 'CREDIT_CARD'}
 								onclick={() => selectedPaymentMethod = 'CREDIT_CARD'}
-								disabled={($store.cart || []).every(part => part.reservationMethod?.includes('INQUIRY'))}
-								class:opacity-50={($store.cart || []).every(part => part.reservationMethod?.includes('INQUIRY'))}
-								class:cursor-not-allowed={($store.cart || []).every(part => part.reservationMethod?.includes('INQUIRY'))}
 							>
 								{#if selectedPaymentMethod === 'CREDIT_CARD'}
 									<div class="absolute top-2 right-2">
@@ -372,26 +327,19 @@ async function handleApplyPromoCode(code: string) {
 										<Icon icon="mdi:credit-card" class="w-6 h-6 text-primary" />
 									</div>
 									<div class="text-left">
-										<div class="font-semibold" 
+										<div class="font-semibold"
 											class:text-primary-foreground={selectedPaymentMethod === 'CREDIT_CARD'}
 											class:text-primary={selectedPaymentMethod !== 'CREDIT_CARD'}
 										>Card Payment</div>
-										<div class="text-sm" 
+										<div class="text-sm"
 											class:text-primary-foreground={selectedPaymentMethod === 'CREDIT_CARD'}
 											class:text-secondary={selectedPaymentMethod !== 'CREDIT_CARD'}
-										>
-											{#if ($store.cart || []).every(part => part.reservationMethod?.includes('INQUIRY'))}
-												Not available for inquiries
-											{:else}
-												Secure online payment
-											{/if}
-										</div>
+										>Secure online payment</div>
 									</div>
 								</div>
 							</button>
 						{/if}
-						</div>
-					{/each}
+					</div>
 				</div>
 			</div>
 		{/if}

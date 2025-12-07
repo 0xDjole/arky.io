@@ -47,22 +47,17 @@
 			</div>
 		</div>
 		
+		{#if $store.selectedProvider}
 		<div class="space-y-2">
-			<h4 class="text-secondary font-medium">{t('reservation.type')}</h4>
+			<h4 class="text-secondary font-medium">{t('reservation.provider')}</h4>
 			<div class="border-secondary bg-secondary rounded-lg border p-4 flex gap-3">
-				<Icon icon="mdi:calendar-check" class="h-5 w-5 text-secondary mt-1"/>
+				<Icon icon="mdi:account" class="h-5 w-5 text-secondary mt-1"/>
 				<div>
-					<p class="font-medium text-primary">
-						{#if $store.selectedMethod === 'STANDARD'}{t('reservation.standard')}{/if}
-						{#if $store.selectedMethod === 'INQUIRY'}{t('reservation.inquiry')}{/if}
-						{#if $store.selectedMethod === 'APPROVAL_REQUIRED'}{t('reservation.approvalRequired')}{/if}
-					</p>
-					{#if $store.selectedProvider}
-						<p class="text-secondary mt-1 text-sm">{t('reservation.providerName')}: {$store.selectedProvider.name?.[locale] || $store.selectedProvider.name?.en || $store.selectedProvider.name}</p>
-					{/if}
+					<p class="font-medium text-primary">{$store.selectedProvider.name?.[locale] || $store.selectedProvider.name?.en || $store.selectedProvider.name}</p>
 				</div>
 			</div>
 		</div>
+		{/if}
 		
 		<div class="space-y-2">
 			<h4 class="text-secondary font-medium">{t('reservation.dateTime')}</h4>
