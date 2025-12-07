@@ -21,6 +21,7 @@ import type {
 } from "../types";
 import { PaymentMethodType } from "../types";
 import { onSuccess, onError } from "@lib/utils/notify";
+import type { ServiceDuration } from "arky-sdk";
 
 export const cartParts = persistentAtom<ReservationCartItem[]>("reservationCart", [], {
 	encode: JSON.stringify,
@@ -131,14 +132,6 @@ const createCalendarGrid = (date: Date) => {
 	return cells;
 };
 
-const formatTimeSlot = (from: number, to: number, timezone: string) => {
-	const opts: Intl.DateTimeFormatOptions = {
-		hour: "2-digit",
-		minute: "2-digit",
-		timeZone: timezone,
-	};
-	return `${new Date(from * 1000).toLocaleTimeString([], opts)} – ${new Date(to * 1000).toLocaleTimeString([], opts)}`;
-};
 
 // Actions
 export const actions = {
@@ -378,94 +371,103 @@ export const actions = {
 		}
 	},
 
-	// Availability and date management
-	async fetchAvailability(type: string, date: string | Date | null = null) {
+	// Get service durations in the correct format
+	getServiceDurations(): ServiceDuration[] {
 		const state = store.get();
-		if (!state.service || currentStepName.get() !== "datetime") return;
+		if (!state.service?.durations?.length) {
+			return [{ duration: 60, isPause: false }]; // Default 1 hour
+		}
+		return state.service.durations.map((d: any) => ({
+			duration: d.duration,
+			isPause: d.isPause || d.is_pause || false,
+		}));
+	},
+
+	// Store the current month's availability helper
+	_monthAvailability: null as any,
+
+	// Fetch and compute availability for current month
+	async fetchMonthAvailability() {
+		const state = store.get();
+		if (!state.service) return;
 
 		store.setKey("loading", true);
-
 		try {
-			let from: number, to: number, limit: number;
+			const year = state.current.getFullYear();
+			const month = state.current.getMonth();
+			const from = Math.floor(new Date(year, month, 1).getTime() / 1000);
+			const to = Math.floor(new Date(year, month + 1, 0, 23, 59, 59).getTime() / 1000);
 
-			if (type === "month") {
-				from = Math.floor(
-					new Date(state.current.getFullYear(), state.current.getMonth(), 1).getTime() / 1000,
-				);
-				to = Math.floor(
-					new Date(state.current.getFullYear(), state.current.getMonth() + 1, 0).getTime() / 1000,
-				);
-				limit = 100;
-			} else if (type === "day" && date) {
-				const dObj = typeof date === "string" ? new Date(date) : date;
-				from = Math.floor(dObj.getTime() / 1000);
-				to = from + 24 * 3600;
-				limit = 100;
-			} else if (type === "first") {
-				const now = new Date();
-				from = Math.floor(now.setHours(0, 0, 0, 0) / 1000);
-				to = Math.floor(new Date(now.getFullYear(), now.getMonth() + 3, 0).getTime() / 1000);
-				limit = 1;
-			} else {
-				store.setKey("loading", false);
-				return;
-			}
+			const providers = await arky.reservation.getServiceProviders({
+				serviceId: state.service.id,
+				from,
+				to,
+			});
 
-			const params: any = { serviceId: state.service.id, from, to, limit };
-			if (state.selectedProvider) params.providerId = state.selectedProvider.id;
+			// Create availability helper - handles filtering, dates, and slots
+			this._monthAvailability = arky.utils.createMonthAvailability(
+				{
+					providers: providers || [],
+					durations: this.getServiceDurations(),
+					timezone: state.timezone,
+					providerId: state.selectedProvider?.id,
+				},
+				year,
+				month,
+			);
 
-			const result = await arky.reservation.getAvailableSlots(params);
-			const items = result.items || [];
-
-			if (type === "month") {
-				const avail = new Set(
-					items.map((i: any) => {
-						const date = new Date(i.from * 1000);
-						return date.toISOString().slice(0, 10);
-					}),
-				);
-				store.setKey(
-					"days",
-					state.days.map((c: any) => {
-						if (!c.blank && c.date) {
-							const iso = c.date.toISOString().slice(0, 10);
-							return { ...c, available: avail.has(iso) };
-						}
-						return c;
-					}),
-				);
-			} else if (type === "day") {
-				const slots = items.map((i: any, idx: number) => ({
-					...i,
-					id: `slot-${i.from}-${idx}`,
-					day: new Date(i.from * 1000).toISOString().slice(0, 10),
-					timeText: formatTimeSlot(i.from, i.to, state.timezone),
-				}));
-
-				store.setKey("slots", slots);
-				if (slots.length && !state.selectedSlot) {
-					store.setKey("selectedSlot", slots[0]);
-				}
-			} else if (type === "first" && result.length) {
-				const first = new Date(result[0].from * 1000);
-				const iso = first.toISOString().slice(0, 10);
-
-				store.setKey("current", new Date(first.getFullYear(), first.getMonth(), 1));
-				this.updateCalendarGrid();
-				await this.fetchAvailability("month");
-
-				if (state.isMultiDay) {
-					store.setKey("startDate", iso);
-					store.setKey("selectedDate", iso);
-				} else {
-					store.setKey("selectedDate", iso);
-					await this.fetchAvailability("day", iso);
-				}
-			}
+			// Mark available days on calendar
+			const availSet = new Set(this._monthAvailability.availableDates);
+			store.setKey(
+				"days",
+				state.days.map((c: any) => {
+					if (!c.blank && c.date) {
+						const iso = `${c.date.getFullYear()}-${String(c.date.getMonth() + 1).padStart(2, "0")}-${String(c.date.getDate()).padStart(2, "0")}`;
+						return { ...c, available: availSet.has(iso) };
+					}
+					return c;
+				}),
+			);
 		} catch (err) {
-			console.error(`Error in fetchAvailability (${type}):`, err);
+			console.error("Error fetching availability:", err);
 		} finally {
 			store.setKey("loading", false);
+		}
+	},
+
+	// Get slots for a specific date (uses cached availability)
+	getSlotsForDate(date: string) {
+		if (!this._monthAvailability) return [];
+		const slots = this._monthAvailability.getSlots(date);
+		store.setKey("slots", slots);
+		if (slots.length && !store.get().selectedSlot) {
+			store.setKey("selectedSlot", slots[0]);
+		}
+		return slots;
+	},
+
+	// Legacy wrapper for existing code
+	async fetchAvailability(type: string, date: string | Date | null = null) {
+		if (currentStepName.get() !== "datetime") return;
+
+		if (type === "month") {
+			await this.fetchMonthAvailability();
+		} else if (type === "day" && date) {
+			const iso = typeof date === "string" ? date : date.toISOString().slice(0, 10);
+			this.getSlotsForDate(iso);
+		} else if (type === "first") {
+			await this.fetchMonthAvailability();
+			if (this._monthAvailability?.firstAvailable) {
+				const first = this._monthAvailability.firstAvailable;
+				const firstDate = new Date(first.from * 1000);
+				const iso = `${firstDate.getFullYear()}-${String(firstDate.getMonth() + 1).padStart(2, "0")}-${String(firstDate.getDate()).padStart(2, "0")}`;
+
+				store.setKey("current", new Date(firstDate.getFullYear(), firstDate.getMonth(), 1));
+				this.updateCalendarGrid();
+				await this.fetchMonthAvailability();
+				store.setKey("selectedDate", iso);
+				this.getSlotsForDate(iso);
+			}
 		}
 	},
 
