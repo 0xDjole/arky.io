@@ -2,14 +2,12 @@
 	import { onMount } from 'svelte';
 	import Icon from '@iconify/svelte';
 	import { getGalleryThumbnail } from '../../index';
-	import { store, actions, initReservationStore, canProceed, currentStepName } from '@lib/core/stores/reservation';
+	import { store, actions, initReservationStore, canProceed, currentStepName, totalSteps } from '@lib/core/stores/reservation';
  	import { t, getLocale, getRelativeLocaleUrl } from '@lib/i18n/index';
 	import appConfig from '../../../appConfig';
 	import { arky } from '@lib/index';
 
 	import StepIndicator from '../StepIndicator/index.svelte';
-	import MethodSelector from '../MethodSelector/index.svelte';
-	import ProviderSelector from '../ProviderSelector/index.svelte';
 	import TimeZoneSelector from '../TimeZoneSelector/index.svelte';
 	import Calendar from '../Calendar/index.svelte';
 	import AvailableSlots from '../AvailableSlots/index.svelte';
@@ -93,18 +91,12 @@
 		</div>
 
 		<div class="p-6 space-y-6">
-			{#if $store.totalSteps > 1}
+			{#if $totalSteps > 1}
 				<StepIndicator />
 			{/if}
 
 			{#key $currentStepName}
-				{#if $currentStepName === 'method'}
-					<MethodSelector />
-
-				{:else if $currentStepName === 'provider'}
-					<ProviderSelector />
-
-				{:else if $currentStepName === 'datetime'}
+				{#if $currentStepName === 'datetime'}
 				<div class="flex flex-col md:flex-row md:gap-6">
 					<div class="md:w-1/2">
 						<h3 class="text-primary mb-4 text-xl font-semibold">
@@ -139,7 +131,7 @@
 					</div>
 				</div>
 
-				{#if $store.totalSteps > 1}
+				{#if $totalSteps > 1}
 					<div class="flex justify-between pt-6">
 						<button class="bg-tertiary hover:bg-secondary text-primary px-4 py-2 rounded-lg flex items-center gap-2"
 						        on:click={() => actions.prevStep()}>
@@ -168,19 +160,6 @@
 				{/if}
 			{/key}
 
-			{#if $store.service && !$store.service.reservationMethods?.length}
-				<div class="py-8 text-center">
-					<div class="bg-primary-900/40 text-primary-400 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
-						<Icon icon="mdi:calendar-remove" class="h-10 w-10" />
-					</div>
-					<h3 class="text-primary mb-2 text-xl font-medium">
-						{t('reservation.notAvailable')}
-					</h3>
-					<p class="text-muted mx-auto max-w-md">
-						{t('reservation.contactUs')}
-					</p>
-				</div>
-			{/if}
 		</div>
 	</div>
 </div>

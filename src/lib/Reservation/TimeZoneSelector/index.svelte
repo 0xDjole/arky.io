@@ -1,9 +1,9 @@
 <script>
-	import Icon from '@iconify/svelte';          
-	import { store, actions } from '@lib/core/stores/reservation';
+	import Icon from '@iconify/svelte';
+	import { store, engine } from '@lib/core/stores/reservation';
 	import { t } from '../../../lib/i18n/index';
-	
-	const changeTZ = (e) => actions.setSelectedTimeZone(e.target.value);
+
+	const changeTZ = (e) => engine.setTimezone(e.target.value);
 	
 	function isMissingTimezone() {
 		return !Object.values($store.tzGroups).flat().some((t) => t.zone === $store.timezone);

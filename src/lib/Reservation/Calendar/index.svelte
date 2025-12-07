@@ -1,26 +1,20 @@
 <script lang="ts">
 	import Icon from '@iconify/svelte';
-	import { store, actions } from '@lib/core/stores/reservation';
+	import { store, engine, actions, monthYear } from '@lib/core/stores/reservation';
 
 	function discClass(cell) {
 		if (cell.blank) return '';
-
-		const avail = actions.isAvailable(cell);
-		const sel = actions.isSelectedDay(cell);
-		const inSpan = actions.isInSelectedRange(cell);
-
-		if (sel) return 'bg-primary-900/50 border-2 border-primary-400 shadow-lg shadow-primary-500/20';
-		if (inSpan) return 'bg-primary-500/30 border border-primary-700/40';
-		if (avail) return 'bg-primary-900/20 border border-primary-800/40';
-
+		if (cell.isSelected) return 'bg-primary-900/50 border-2 border-primary-400 shadow-lg shadow-primary-500/20';
+		if (cell.isInRange) return 'bg-primary-500/30 border border-primary-700/40';
+		if (cell.available) return 'bg-primary-900/20 border border-primary-800/40';
 		return 'bg-transparent border-muted';
 	}
 
 	function numClass(cell) {
 		if (cell.blank) return 'text-muted';
-		if (actions.isSelectedDay(cell)) return 'text-primary font-bold';
-		if (actions.isInSelectedRange(cell)) return 'text-secondary';
-		if (actions.isAvailable(cell)) return 'text-secondary';
+		if (cell.isSelected) return 'text-primary font-bold';
+		if (cell.isInRange) return 'text-secondary';
+		if (cell.available) return 'text-secondary';
 		return 'text-muted';
 	}
 </script>
@@ -35,15 +29,15 @@
 
 		<div class="relative flex items-center justify-between">
 			<button aria-label="Previous month"
-			        on:click={() => actions.prevMonth()}
+			        on:click={() => engine.prevMonth()}
 			        class="bg-secondary text-muted border-primary hover:bg-tertiary hover:text-primary flex h-10 w-10 items-center justify-center rounded-full border transition">
 				<Icon icon="mdi:chevron-left" class="h-5 w-5"/>
 			</button>
 
-			<h3 class="text-xl font-bold tracking-wide text-primary">{$store.monthYear}</h3>
+			<h3 class="text-xl font-bold tracking-wide text-primary">{$monthYear}</h3>
 
 			<button aria-label="Next month"
-			        on:click={() => actions.nextMonth()}
+			        on:click={() => engine.nextMonth()}
 			        class="bg-secondary text-muted border-primary hover:bg-tertiary hover:text-primary flex h-10 w-10 items-center justify-center rounded-full border transition">
 				<Icon icon="mdi:chevron-right" class="h-5 w-5"/>
 			</button>
@@ -77,7 +71,7 @@
 	</div>
 
 	<div class="bg-tertiary grid grid-cols-7 gap-1.5 p-4">
-		{#each $store.days as cell}
+		{#each $store.calendar as cell}
 			<div class="group relative flex aspect-square items-center justify-center {cell.blank ? 'text-muted cursor-default' : 'cursor-pointer'}"
 			     on:click={() => !cell.blank && actions.selectDate(cell)}>
 
@@ -89,7 +83,7 @@
 					{cell.blank ? '' : cell.date?.getDate()}
 				</span>
 
-				{#if !cell.blank && actions.isAvailable(cell) && !actions.isSelectedDay(cell)}
+				{#if !cell.blank && cell.available && !cell.isSelected}
 					<div class="bg-primary-400 shadow-sm absolute -bottom-2 mt-2 h-1.5 w-1.5 rounded-full"></div>
 				{/if}
 			</div>
