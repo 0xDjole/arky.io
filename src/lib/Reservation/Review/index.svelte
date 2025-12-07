@@ -55,8 +55,7 @@
 					<p class="font-medium text-primary">
 						{#if $store.selectedMethod === 'STANDARD'}{t('reservation.standard')}{/if}
 						{#if $store.selectedMethod === 'INQUIRY'}{t('reservation.inquiry')}{/if}
-						{#if $store.selectedMethod === 'STANDARD_SPECIFIC'}{t('reservation.specificStandard')}{/if}
-						{#if $store.selectedMethod === 'INQUIRY_SPECIFIC'}{t('reservation.specificInquiry')}{/if}
+						{#if $store.selectedMethod === 'APPROVAL_REQUIRED'}{t('reservation.approvalRequired')}{/if}
 					</p>
 					{#if $store.selectedProvider}
 						<p class="text-secondary mt-1 text-sm">{t('reservation.providerName')}: {$store.selectedProvider.name?.[locale] || $store.selectedProvider.name?.en || $store.selectedProvider.name}</p>
@@ -107,7 +106,7 @@
 		
 		<button
 			class="bg-primary-600 hover:bg-primary-700 text-white w-full flex items-center justify-center gap-2 py-3 rounded-lg mt-4 transition"
-			on:click={() => actions.addToCart($store.selectedSlot)}>
+			on:click={() => actions.addToCart()}>
 			{t('cart.addToCart')} <Icon icon="mdi:cart-plus" class="h-5 w-5"/>
 		</button>
 	</div>

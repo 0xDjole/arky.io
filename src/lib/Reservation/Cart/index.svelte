@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Icon from '@iconify/svelte';
 	import DynamicForm from '@lib/DynamicForm/index.svelte';
-	import { store, actions, initReservationStore, cartParts } from '@lib/core/stores/reservation';
+	import { store, engine, actions, initReservationStore, cartParts } from '@lib/core/stores/reservation';
 	import { reservationBlocks, paymentMethods, paymentConfig, currency } from '@lib/core/stores/business';
 	import { onMount } from 'svelte';
 	import { t } from '../../../lib/i18n/index';
@@ -38,7 +38,7 @@
 	});
 
 	$effect(() => {
-		const isInquiryOnly = ($store.items || []).every(part => part.reservationMethod?.includes('INQUIRY'));
+		const isInquiryOnly = ($store.cart || []).every(part => part.reservationMethod?.includes('INQUIRY'));
 
 		if (isInquiryOnly) {
 			selectedPaymentMethod = 'FREE';
@@ -52,7 +52,7 @@
 
 	// Manually fetch quote when needed
 	function refreshQuote() {
-		if ($store.items && $store.items.length > 0) {
+		if ($store.cart && $store.cart.length > 0) {
 			actions.fetchQuote(selectedPaymentMethod, appliedPromoCode);
 		}
 	}
@@ -132,9 +132,8 @@ async function handleApplyPromoCode(code: string) {
 				showToast(message, 'success', 6000);
 
 				// Clear cart and promo code
-				const emptyCart = [];
-				store.setKey("items", emptyCart);
-				cartParts.set(emptyCart);
+				engine.clearCart();
+				cartParts.set([]);
 				appliedPromoCode = null;
 				return;
 			}
@@ -163,9 +162,8 @@ async function handleApplyPromoCode(code: string) {
 			}
 
 			// Clear cart and promo code on success
-			const emptyCart = [];
-			store.setKey("items", emptyCart);
-			cartParts.set(emptyCart);
+			engine.clearCart();
+			cartParts.set([]);
 			appliedPromoCode = null;
 
 		} catch (error) {
@@ -191,7 +189,7 @@ async function handleApplyPromoCode(code: string) {
 		/>
 	{/if}
 
-	{#if !$store.items?.length}
+	{#if !$store.cart?.length}
 		<div class="bg-secondary rounded-lg p-6 text-center">
 			<div class="text-muted bg-tertiary mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
 				<Icon icon="mdi:cart-outline" class="h-8 w-8" />
@@ -200,7 +198,7 @@ async function handleApplyPromoCode(code: string) {
 		</div>
 	{:else}
 		<div class="space-y-2">
-			{#each $store.items || [] as part (part.id)}
+			{#each $store.cart || [] as part (part.id)}
 				<div class="bg-secondary border-secondary rounded-lg border p-4">
 					<div class="flex items-center justify-between">
 						<div>
@@ -233,7 +231,7 @@ async function handleApplyPromoCode(code: string) {
 
 						<button
 							class="hover:bg-tertiary flex h-8 w-8 items-center justify-center rounded-full text-red-500 hover:text-red-600 transition"
-							onclick={() => actions.removePart(part.id)}
+							onclick={() => engine.removeFromCart(part.id)}
 							aria-label={t('cart.remove')}>
 							<Icon icon="mdi:trash-can-outline" class="h-5 w-5" />
 						</button>
@@ -255,13 +253,13 @@ async function handleApplyPromoCode(code: string) {
 			fetchingQuote={$store.fetchingQuote}
 			quoteError={$store.quoteError}
 			currency={$currency || 'USD'}
-			itemCount={$store.items?.length || 0}
+			itemCount={$store.cart?.length || 0}
 			itemLabel="service"
 			title="Reservation Summary"
 			showShipping={false}
 		/>
 
-		{#if selectedPaymentMethod === 'CREDIT_CARD' && ($store.items || []).some(part => !part.reservationMethod?.includes('INQUIRY'))}
+		{#if selectedPaymentMethod === 'CREDIT_CARD' && ($store.cart || []).some(part => !part.reservationMethod?.includes('INQUIRY'))}
 			<PaymentForm
 				allowedMethods={$paymentMethods || ['CASH']}
 				paymentProvider={$paymentConfig?.provider}
@@ -276,7 +274,7 @@ async function handleApplyPromoCode(code: string) {
 			<!-- Payment method selection only -->
 			<div class="space-y-4">
 				<div>
-					{#each [($store.items || []).every(part => part.reservationMethod?.includes('INQUIRY'))] as isInquiryOnly}
+					{#each [($store.cart || []).every(part => part.reservationMethod?.includes('INQUIRY'))] as isInquiryOnly}
 						{@const availableMethods = isInquiryOnly ? ['FREE'] : ($paymentMethods || ['CASH'])}
 						<div class="grid gap-3" class:grid-cols-2={availableMethods.length > 1} class:grid-cols-1={availableMethods.length === 1}>
 						{#if availableMethods.includes('FREE')}
@@ -360,9 +358,9 @@ async function handleApplyPromoCode(code: string) {
 								class:bg-secondary={selectedPaymentMethod !== 'CREDIT_CARD'}
 								class:hover:bg-tertiary={selectedPaymentMethod !== 'CREDIT_CARD'}
 								onclick={() => selectedPaymentMethod = 'CREDIT_CARD'}
-								disabled={($store.items || []).every(part => part.reservationMethod?.includes('INQUIRY'))}
-								class:opacity-50={($store.items || []).every(part => part.reservationMethod?.includes('INQUIRY'))}
-								class:cursor-not-allowed={($store.items || []).every(part => part.reservationMethod?.includes('INQUIRY'))}
+								disabled={($store.cart || []).every(part => part.reservationMethod?.includes('INQUIRY'))}
+								class:opacity-50={($store.cart || []).every(part => part.reservationMethod?.includes('INQUIRY'))}
+								class:cursor-not-allowed={($store.cart || []).every(part => part.reservationMethod?.includes('INQUIRY'))}
 							>
 								{#if selectedPaymentMethod === 'CREDIT_CARD'}
 									<div class="absolute top-2 right-2">
@@ -382,7 +380,7 @@ async function handleApplyPromoCode(code: string) {
 											class:text-primary-foreground={selectedPaymentMethod === 'CREDIT_CARD'}
 											class:text-secondary={selectedPaymentMethod !== 'CREDIT_CARD'}
 										>
-											{#if ($store.items || []).every(part => part.reservationMethod?.includes('INQUIRY'))}
+											{#if ($store.cart || []).every(part => part.reservationMethod?.includes('INQUIRY'))}
 												Not available for inquiries
 											{:else}
 												Secure online payment

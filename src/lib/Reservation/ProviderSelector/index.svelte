@@ -1,6 +1,6 @@
 <script>
 	import Icon from '@iconify/svelte';
-	import { store, actions } from '@lib/core/stores/reservation';
+	import { store, engine, actions } from '@lib/core/stores/reservation';
 	import { t, getLocale } from '../../../lib/i18n/index';
 	import { getFirstGalleryMedia } from '@lib/utils/gallery';
 
@@ -30,7 +30,7 @@
 				{#each $store.providers as r (r.id)}
 					{@const media = getFirstGalleryMedia(r.blocks)}
 					<button
-						on:click={() => actions.selectProvider(r)}
+						on:click={() => engine.selectProvider(r)}
 						class="flex w-full items-center gap-3 rounded-lg border p-3 transition-colors
 							{ $store.selectedProvider?.id === r.id
 								? 'border-primary-500 bg-primary-900/40'

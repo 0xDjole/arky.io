@@ -1,904 +1,340 @@
-// Reservation store with TypeScript - Simplified with Business Store
-import { computed, deepMap } from "nanostores";
+import { computed } from "nanostores";
 import { persistentAtom } from "@nanostores/persistent";
-import { getLocalizedString, getLocale, getLocaleFromUrl } from "@lib/i18n/index";
-import { API_URL } from "../config";
 import { arky } from "@lib/index";
-import {
-	selectedMarket,
-	currency,
-	paymentMethods,
-	paymentConfig,
-	reservationBlocks,
-	businessActions,
-} from "./business";
-import type {
-	ReservationStoreState,
-	ReservationCartItem,
-	Business,
-	Block,
-	Payment,
-} from "../types";
-import { PaymentMethodType } from "../types";
-import { onSuccess, onError } from "@lib/utils/notify";
-import type { ServiceDuration } from "arky-sdk";
+import type { Slot, CalendarDay } from "arky-sdk";
 
-export const cartParts = persistentAtom<ReservationCartItem[]>("reservationCart", [], {
-	encode: JSON.stringify,
-	decode: JSON.parse,
+const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+export const engine = arky.reservationEngine({
+  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
 });
 
-export const store = deepMap<ReservationStoreState>({
-	currentStep: 1,
-	totalSteps: 4,
-	steps: {
-		1: { name: "method", labelKey: "method" },
-		2: { name: "provider", labelKey: "provider" },
-		3: { name: "datetime", labelKey: "datetime" },
-		4: { name: "review", labelKey: "review" },
-	},
+export const store = engine.store;
 
-	// Calendar data
-	weekdays: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-	monthYear: "",
-	days: [],
-	current: new Date(),
+let cartInitialized = false;
 
-	// Selection state
-	selectedDate: null,
-	slots: [],
-	selectedSlot: null,
-	selectedMethod: null,
-	selectedProvider: null,
-	providers: [],
+store.setKey("weekdays" as any, WEEKDAYS);
+store.setKey("quote" as any, null);
+store.setKey("fetchingQuote" as any, false);
+store.setKey("quoteError" as any, null);
+store.setKey("currency" as any, "USD");
+store.setKey("phoneNumber" as any, "");
+store.setKey("verificationCode" as any, "");
+store.setKey("tzGroups" as any, arky.utils.tzGroups);
+store.setKey("dateTimeConfirmed" as any, false);
+store.setKey("isMultiDay" as any, false);
 
-	// Status flags
-	loading: false,
-	startDate: null,
-	endDate: null,
-	isMultiDay: false,
-
-	// Phone verification
-	phoneNumber: "",
-	phoneError: null,
-	phoneSuccess: null,
-	verificationCode: "",
-	verifyError: null,
-	isPhoneVerified: false,
-	isSendingCode: false,
-	isVerifying: false,
-	codeSentAt: null,
-	canResendAt: null,
-
-	// Quote state
-	fetchingQuote: false,
-	quote: null,
-	quoteError: null,
-
-	// Service & config
-	guestToken: null,
-	service: null,
-	apiUrl: API_URL,
-	timezone: arky.utils.findTimeZone(arky.utils.tzGroups),
-	tzGroups: arky.utils.tzGroups,
-	items: [],
-});
-
-export const currentStepName = computed(store, (state) => {
-	return state?.steps?.[state?.currentStep]?.name || "";
+export const currentStepName = computed(store, (state: any) => {
+  if (!state.service) return "";
+  if (!state.selectedMethod && state.service.reservationMethods?.length > 1) return "method";
+  if (state.selectedMethod?.includes("SPECIFIC") && !state.selectedProvider) return "provider";
+  if (!state.selectedSlot || !state.dateTimeConfirmed) return "datetime";
+  return "review";
 });
 
 export const canProceed = computed(store, (state) => {
-	const stepName = state?.steps?.[state?.currentStep]?.name;
-	switch (stepName) {
-		case "method":
-			return !!state.selectedMethod;
-		case "provider":
-			return !!state.selectedProvider;
-		case "datetime":
-			return state.isMultiDay
-				? !!(state.startDate && state.endDate && state.selectedSlot)
-				: !!(state.selectedDate && state.selectedSlot);
-		case "review":
-			return true;
-		default:
-			return false;
-	}
+  const step = currentStepName.get();
+  switch (step) {
+    case "method":
+      return !!state.selectedMethod;
+    case "provider":
+      return !!state.selectedProvider;
+    case "datetime":
+      return state.isMultiDay
+        ? !!(state.startDate && state.endDate && state.selectedSlot)
+        : !!(state.selectedDate && state.selectedSlot);
+    case "review":
+      return true;
+    default:
+      return false;
+  }
 });
 
-const createCalendarGrid = (date: Date) => {
-	const first = new Date(date.getFullYear(), date.getMonth(), 1);
-	const last = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-	const cells: any[] = [];
+export const monthYear = computed(store, (state) => {
+  return state.currentMonth.toLocaleString(undefined, { month: "long", year: "numeric" });
+});
 
-	// Leading blanks
-	const pad = (first.getDay() + 6) % 7;
-	for (let i = 0; i < pad; i++) cells.push({ key: `b-${i}`, blank: true });
+export const totalSteps = computed(store, (state) => {
+  if (!state.service) return 0;
+  let steps = 2;
+  if (state.service.reservationMethods?.length > 1) steps++;
+  if (state.selectedMethod?.includes("SPECIFIC")) steps++;
+  return steps;
+});
 
-	// Date cells
-	for (let d = 1; d <= last.getDate(); d++) {
-		cells.push({
-			key: `d-${d}`,
-			blank: false,
-			date: new Date(date.getFullYear(), date.getMonth(), d),
-			available: false,
-		});
-	}
+export const steps = computed(store, (state) => {
+  const result: Record<number, { name: string }> = {};
+  let idx = 1;
 
-	// Trailing blanks
-	const suffix = (7 - (cells.length % 7)) % 7;
-	for (let i = 0; i < suffix; i++) cells.push({ key: `b2-${i}`, blank: true });
+  if (state.service?.reservationMethods?.length > 1) {
+    result[idx++] = { name: "method" };
+  }
+  if (state.selectedMethod?.includes("SPECIFIC")) {
+    result[idx++] = { name: "provider" };
+  }
+  result[idx++] = { name: "datetime" };
+  result[idx++] = { name: "review" };
 
-	return cells;
+  return result;
+});
+
+export const currentStep = computed(store, (state) => {
+  const name = currentStepName.get();
+  const stepsObj = steps.get();
+
+  for (const [idx, step] of Object.entries(stepsObj)) {
+    if (step.name === name) return parseInt(idx);
+  }
+  return 1;
+});
+
+const formatDateDisplay = (ds: string | null): string => {
+  if (!ds) return "";
+  const d = new Date(ds);
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 };
 
+const STEP_ORDER = ["method", "provider", "datetime", "review"];
 
-// Actions
+const getStepIndex = (step: string): number => {
+  const idx = STEP_ORDER.indexOf(step);
+  return idx >= 0 ? idx : 0;
+};
+
 export const actions = {
-	// Calendar management
-	updateCalendarGrid() {
-		const state = store.get();
-		const cur = state.current || new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-		const days = createCalendarGrid(cur);
-
-		store.setKey("current", cur);
-		store.setKey("monthYear", cur.toLocaleString(undefined, { month: "long", year: "numeric" }));
-		store.setKey("days", days);
-	},
-
-	updateCalendar() {
-		this.updateCalendarGrid();
-		const state = store.get();
-		if (state.service) this.fetchAvailability("month");
-	},
-
-	prevMonth() {
-		const { current } = store.get();
-		store.setKey("current", new Date(current.getFullYear(), current.getMonth() - 1, 1));
-		this.updateCalendar();
-	},
-
-	nextMonth() {
-		const { current } = store.get();
-		store.setKey("current", new Date(current.getFullYear(), current.getMonth() + 1, 1));
-		this.updateCalendar();
-	},
-
-	// Service initialization
-	setService(service: any) {
-		store.setKey("service", service);
-		store.setKey("selectedMethod", null);
-		store.setKey("selectedProvider", null);
-		store.setKey("providers", []);
-		store.setKey("selectedDate", null);
-		store.setKey("startDate", null);
-		store.setKey("endDate", null);
-		store.setKey("slots", []);
-		store.setKey("selectedSlot", null);
-		store.setKey("currentStep", 1);
-		store.setKey("isMultiDay", !!service?.reservationConfigs?.isMultiDay);
-
-		const now = new Date();
-		store.setKey("current", new Date(now.getFullYear(), now.getMonth(), 1));
-		this.updateCalendarGrid();
-
-		// Auto-select if only one method available
-		if (service.reservationMethods?.length === 1) {
-			const method = service.reservationMethods[0];
-			store.setKey("selectedMethod", method);
-			this.determineTotalSteps();
-			this.handleMethodSelection(method, false);
-		} else {
-			this.determineTotalSteps();
-		}
-		this.fetchAvailability("month");
-	},
-
-	// Step management
-	determineTotalSteps(): number {
-		const state = store.get();
-		if (!state.service) {
-			store.setKey("totalSteps", 1);
-			return 1;
-		}
-
-		const active: any[] = [];
-		if (state.service.reservationMethods?.length > 1) {
-			active.push({ name: "method", label: "Choose Reservation Type" });
-		}
-		if (state.selectedMethod?.includes("SPECIFIC")) {
-			active.push({ name: "provider", label: "Choose Provider" });
-		}
-		if (state.selectedMethod) {
-			active.push({
-				name: "datetime",
-				label: state.isMultiDay ? "Choose Date Range" : "Choose Date & Time",
-			});
-		}
-		active.push({ name: "review", label: "Review & Confirm" });
-
-		const stepObj: Record<number, any> = {};
-		active.forEach((st, idx) => {
-			stepObj[idx + 1] = st;
-		});
-
-		store.setKey("steps", stepObj);
-		store.setKey("totalSteps", active.length);
-
-		if (state.currentStep > active.length) {
-			store.setKey("currentStep", active.length);
-		}
-		return active.length;
-	},
-
-	getStepNumberByName(name: string): number | null {
-		const { steps } = store.get();
-		for (const [k, v] of Object.entries(steps)) {
-			if (v.name === name) return Number(k);
-		}
-		return null;
-	},
-
-	nextStep() {
-		const state = store.get();
-		if (state.currentStep >= state.totalSteps || !canProceed.get()) return;
-
-		const next = state.currentStep + 1;
-		const name = state.steps[next]?.name;
-		store.setKey("currentStep", next);
-
-		if (name === "datetime") {
-			this.fetchAvailability("month");
-			if (!state.selectedDate && !state.startDate) {
-				this.findFirstAvailable();
-			}
-		}
-	},
-
-	prevStep() {
-		const state = store.get();
-		if (state.currentStep <= 1) return;
-		this.clearCurrentStepState();
-		store.setKey("currentStep", state.currentStep - 1);
-	},
-
-	clearCurrentStepState() {
-		const name = currentStepName.get();
-		if (name === "method") {
-			store.setKey("selectedMethod", null);
-		} else if (name === "provider") {
-			store.setKey("selectedProvider", null);
-			store.setKey("providers", []);
-		} else if (name === "datetime") {
-			store.setKey("selectedDate", null);
-			store.setKey("startDate", null);
-			store.setKey("endDate", null);
-			store.setKey("slots", []);
-			store.setKey("selectedSlot", null);
-		}
-	},
-
-	goToStep(step: number) {
-		const state = store.get();
-		if (step < 1 || step > state.totalSteps) return;
-
-		if (step < state.currentStep) {
-			for (let i = state.currentStep; i > step; i--) {
-				const n = state.steps[i]?.name;
-				if (n === "datetime") {
-					store.setKey("selectedDate", null);
-					store.setKey("startDate", null);
-					store.setKey("endDate", null);
-					store.setKey("slots", []);
-					store.setKey("selectedSlot", null);
-				} else if (n === "provider") {
-					store.setKey("selectedProvider", null);
-					store.setKey("providers", []);
-				} else if (n === "method") {
-					store.setKey("selectedMethod", null);
-				}
-			}
-		}
-
-		store.setKey("currentStep", step);
-
-		if (state.steps[step]?.name === "datetime") {
-			this.fetchAvailability("month");
-			if (!state.selectedDate && !state.startDate) {
-				this.findFirstAvailable();
-			}
-		}
-	},
-
-	// Method selection
-	async handleMethodSelection(method: string, advance: boolean = true) {
-		store.setKey("selectedDate", null);
-		store.setKey("startDate", null);
-		store.setKey("endDate", null);
-		store.setKey("slots", []);
-		store.setKey("selectedSlot", null);
-		store.setKey("selectedMethod", method);
-
-		this.determineTotalSteps();
-
-		if (method.includes("SPECIFIC")) {
-			await this.loadProviders();
-			const state = store.get();
-			if (advance && state.providers.length === 1) {
-				this.selectProvider(state.providers[0]);
-				const datetimeStep = this.getStepNumberByName("datetime");
-				if (datetimeStep) this.goToStep(datetimeStep);
-				return;
-			}
-		} else if (method === "STANDARD" && advance) {
-			const datetimeStep = this.getStepNumberByName("datetime");
-			if (datetimeStep) this.goToStep(datetimeStep);
-			return;
-		}
-
-		if (advance && store.get().currentStep < store.get().totalSteps) {
-			this.nextStep();
-		}
-	},
-
-	// Provider management
-	async loadProviders() {
-		store.setKey("loading", true);
-		store.setKey("providers", []);
-
-		try {
-			const { service } = store.get();
-			const response = await arky.reservation.getProviders({ serviceId: service.id, limit: 100 });
-			store.setKey("providers", response?.items || []);
-		} catch (e) {
-			console.error("Error loading providers:", e);
-		} finally {
-			store.setKey("loading", false);
-		}
-	},
-
-	selectProvider(provider: any) {
-		store.setKey("selectedProvider", provider);
-		store.setKey("selectedDate", null);
-		store.setKey("startDate", null);
-		store.setKey("endDate", null);
-		store.setKey("slots", []);
-		store.setKey("selectedSlot", null);
-
-		if (currentStepName.get() === "datetime") {
-			this.fetchAvailability("month");
-			this.findFirstAvailable();
-		}
-	},
-
-	// Get service durations in the correct format
-	getServiceDurations(): ServiceDuration[] {
-		const state = store.get();
-		if (!state.service?.durations?.length) {
-			return [{ duration: 60, isPause: false }]; // Default 1 hour
-		}
-		return state.service.durations.map((d: any) => ({
-			duration: d.duration,
-			isPause: d.isPause || d.is_pause || false,
-		}));
-	},
-
-	// Store the current month's availability helper
-	_monthAvailability: null as any,
-
-	// Fetch and compute availability for current month
-	async fetchMonthAvailability() {
-		const state = store.get();
-		if (!state.service) return;
-
-		store.setKey("loading", true);
-		try {
-			const year = state.current.getFullYear();
-			const month = state.current.getMonth();
-			const from = Math.floor(new Date(year, month, 1).getTime() / 1000);
-			const to = Math.floor(new Date(year, month + 1, 0, 23, 59, 59).getTime() / 1000);
-
-			const providers = await arky.reservation.getServiceProviders({
-				serviceId: state.service.id,
-				from,
-				to,
-			});
-
-			// Create availability helper - handles filtering, dates, and slots
-			this._monthAvailability = arky.utils.createMonthAvailability(
-				{
-					providers: providers || [],
-					durations: this.getServiceDurations(),
-					timezone: state.timezone,
-					providerId: state.selectedProvider?.id,
-				},
-				year,
-				month,
-			);
-
-			// Mark available days on calendar
-			const availSet = new Set(this._monthAvailability.availableDates);
-			store.setKey(
-				"days",
-				state.days.map((c: any) => {
-					if (!c.blank && c.date) {
-						const iso = `${c.date.getFullYear()}-${String(c.date.getMonth() + 1).padStart(2, "0")}-${String(c.date.getDate()).padStart(2, "0")}`;
-						return { ...c, available: availSet.has(iso) };
-					}
-					return c;
-				}),
-			);
-		} catch (err) {
-			console.error("Error fetching availability:", err);
-		} finally {
-			store.setKey("loading", false);
-		}
-	},
-
-	// Get slots for a specific date (uses cached availability)
-	getSlotsForDate(date: string) {
-		if (!this._monthAvailability) return [];
-		const slots = this._monthAvailability.getSlots(date);
-		store.setKey("slots", slots);
-		if (slots.length && !store.get().selectedSlot) {
-			store.setKey("selectedSlot", slots[0]);
-		}
-		return slots;
-	},
-
-	// Legacy wrapper for existing code
-	async fetchAvailability(type: string, date: string | Date | null = null) {
-		if (currentStepName.get() !== "datetime") return;
-
-		if (type === "month") {
-			await this.fetchMonthAvailability();
-		} else if (type === "day" && date) {
-			const iso = typeof date === "string" ? date : date.toISOString().slice(0, 10);
-			this.getSlotsForDate(iso);
-		} else if (type === "first") {
-			await this.fetchMonthAvailability();
-			if (this._monthAvailability?.firstAvailable) {
-				const first = this._monthAvailability.firstAvailable;
-				const firstDate = new Date(first.from * 1000);
-				const iso = `${firstDate.getFullYear()}-${String(firstDate.getMonth() + 1).padStart(2, "0")}-${String(firstDate.getDate()).padStart(2, "0")}`;
-
-				store.setKey("current", new Date(firstDate.getFullYear(), firstDate.getMonth(), 1));
-				this.updateCalendarGrid();
-				await this.fetchMonthAvailability();
-				store.setKey("selectedDate", iso);
-				this.getSlotsForDate(iso);
-			}
-		}
-	},
-
-	findFirstAvailable() {
-		if (currentStepName.get() === "datetime") this.fetchAvailability("first");
-	},
-
-	// Date selection
-	selectDate(cell: any) {
-		if (!cell.date || !cell.available) return;
-		// Store date components directly to avoid timezone issues
-		const dateInfo = {
-			year: cell.date.getFullYear(),
-			month: cell.date.getMonth() + 1,
-			day: cell.date.getDate(),
-			iso: `${cell.date.getFullYear()}-${String(cell.date.getMonth() + 1).padStart(2, "0")}-${String(cell.date.getDate()).padStart(2, "0")}`,
-		};
-		const state = store.get();
-
-		if (state.isMultiDay) {
-			if (!state.startDate) {
-				store.setKey("startDate", dateInfo.iso);
-				store.setKey("selectedSlot", null);
-				store.setKey("selectedDate", dateInfo.iso);
-				store.setKey("endDate", null);
-			} else if (!state.endDate) {
-				const start = new Date(state.startDate).getTime();
-				const cellT = cell.date.getTime();
-				if (cellT < start) {
-					store.setKey("endDate", state.startDate);
-					store.setKey("startDate", dateInfo.iso);
-				} else {
-					store.setKey("endDate", dateInfo.iso);
-				}
-			} else {
-				store.setKey("startDate", dateInfo.iso);
-				store.setKey("selectedDate", dateInfo.iso);
-				store.setKey("endDate", null);
-				store.setKey("selectedSlot", null);
-			}
-		} else {
-			store.setKey("selectedSlot", null);
-			store.setKey("selectedDate", dateInfo.iso);
-			this.fetchAvailability("day", dateInfo.iso);
-		}
-	},
-
-	createMultiDaySlot() {
-		const state = store.get();
-		if (!state.startDate || !state.endDate) return;
-
-		const startDT = new Date(state.startDate);
-		startDT.setHours(9, 0, 0, 0);
-		const endDT = new Date(state.endDate);
-		endDT.setHours(17, 0, 0, 0);
-
-		const from = Math.floor(startDT.getTime() / 1000);
-		const to = Math.floor(endDT.getTime() / 1000);
-
-		const rangeSlot = {
-			id: `multi-day-slot-${from}-${to}`,
-			from,
-			to,
-			isMultiDay: true,
-			timeText: `9:00 AM - 5:00 PM daily`,
-			dateRange: `${this.formatDateDisplay(state.startDate)} to ${this.formatDateDisplay(state.endDate)}`,
-			day: state.startDate,
-		};
-
-		store.setKey("slots", [rangeSlot]);
-		store.setKey("selectedSlot", rangeSlot);
-	},
-
-	resetDateSelection() {
-		store.setKey("startDate", null);
-		store.setKey("endDate", null);
-		store.setKey("selectedDate", null);
-		store.setKey("slots", []);
-		store.setKey("selectedSlot", null);
-	},
-
-	selectTimeSlot(slot: any) {
-		store.setKey("selectedSlot", slot);
-	},
-
-	setSelectedTimeZone(zone: string) {
-		const state = store.get();
-		if (zone === state.timezone) return;
-
-		store.setKey("timezone", zone);
-
-		if (currentStepName.get() === "datetime") {
-			if (state.selectedDate) {
-				this.fetchAvailability("day", state.selectedDate);
-			} else if (!state.selectedDate && !state.startDate) {
-				this.findFirstAvailable();
-			}
-		}
-	},
-
-	// Calendar helpers
-	isAvailable(cell: any): boolean {
-		return cell.date && cell.available;
-	},
-
-	isSelectedDay(cell: any): boolean {
-		if (cell.blank || !cell.date) return false;
-		const iso = `${cell.date.getFullYear()}-${String(cell.date.getMonth() + 1).padStart(2, "0")}-${String(cell.date.getDate()).padStart(2, "0")}`;
-		const state = store.get();
-		return iso === state.startDate || iso === state.endDate || iso === state.selectedDate;
-	},
-
-	isInSelectedRange(cell: any): boolean {
-		const state = store.get();
-		if (cell.blank || !cell.date || !state.startDate || !state.endDate) return false;
-		const t = cell.date.getTime();
-		const a = new Date(state.startDate).getTime();
-		const b = new Date(state.endDate).getTime();
-		return t >= a && t <= b;
-	},
-
-	formatDateDisplay(ds: string | null): string {
-		if (!ds) return "";
-		const d = new Date(ds);
-		return d.toLocaleDateString(getLocale(), { month: "short", day: "numeric" });
-	},
-
-	// Cart operations
-	addToCart(slot: any) {
-		const state = store.get();
-		const id = crypto.randomUUID();
-
-		let dateDisplay: string, timeText: string;
-		if (state.isMultiDay && slot.isMultiDay) {
-			const a = new Date(slot.from * 1000),
-				b = new Date(slot.to * 1000);
-			dateDisplay = `${a.toLocaleDateString(getLocale(), { month: "short", day: "numeric" })} - ${b.toLocaleDateString(getLocale(), { month: "short", day: "numeric", year: "numeric" })}`;
-			timeText = slot.timeText;
-		} else {
-			const date = state.selectedDate ? new Date(state.selectedDate) : new Date(slot.from * 1000);
-			dateDisplay = date.toLocaleDateString(getLocale(), {
-				weekday: "short",
-				year: "numeric",
-				month: "short",
-				day: "numeric",
-			});
-			timeText = slot.timeText;
-		}
-
-		const blocks = (state.service?.reservationBlocks || []).map((f: any) => ({
-			...f,
-			value: Array.isArray(f.value) ? f.value : [f.value],
-		}));
-
-		const newPart: ReservationCartItem = {
-			id,
-			serviceId: state.service.id,
-			serviceName: getLocalizedString(state.service.name, getLocale()),
-			date: dateDisplay,
-			from: slot.from,
-			to: slot.to,
-			timeText,
-			isMultiDay: state.isMultiDay && (!!state.endDate || slot.isMultiDay),
-			reservationMethod: state.selectedMethod || "",
-			providerId: state.selectedProvider?.id,
-			blocks,
-		};
-
-		const newParts = [...state.items, newPart];
-		store.setKey("items", newParts);
-		cartParts.set(newParts);
-
-		this.resetDateSelection();
-		store.setKey("currentStep", 1);
-		if (state.service.reservationMethods?.length > 1) {
-			store.setKey("selectedMethod", null);
-		}
-	},
-
-	removePart(id: string) {
-		const filteredParts = store.get().items.filter((p) => p.id !== id);
-		store.setKey("items", filteredParts);
-		cartParts.set(filteredParts);
-	},
-
-	// Phone validation helper (using shared utility)
-	validatePhoneNumber(phone: string): boolean {
-		const result = arky.utils.validatePhoneNumber(phone);
-		return result.isValid;
-	},
-
-	// Phone verification
-	async addPhoneNumber(): Promise<boolean> {
-		store.setKey("phoneError", null);
-		store.setKey("phoneSuccess", null);
-		store.setKey("isSendingCode", true);
-
-		try {
-			const phoneNumber = store.get().phoneNumber;
-
-			// Validate phone number format
-			if (!this.validatePhoneNumber(phoneNumber)) {
-				store.setKey("phoneError", "Please enter a valid phone number");
-				return false;
-			}
-
-			await arky.user.addPhoneNumber(
-				{ phoneNumber },
-				{
-					onSuccess: onSuccess("Verification code sent successfully!"),
-				},
-			);
-
-			store.setKey("phoneSuccess", "Verification code sent successfully!");
-			store.setKey("codeSentAt", Date.now());
-			return true;
-		} catch (e: any) {
-			store.setKey("phoneError", e.message);
-			return false;
-		} finally {
-			store.setKey("isSendingCode", false);
-		}
-	},
-
-	async phoneNumberConfirm(): Promise<boolean> {
-		store.setKey("verifyError", null);
-		store.setKey("isVerifying", true);
-
-		try {
-			const { phoneNumber, verificationCode } = store.get();
-
-			// Validate code format
-			if (!verificationCode || verificationCode.length !== 4) {
-				store.setKey("verifyError", "Please enter a 4-digit verification code");
-				return false;
-			}
-
-			await arky.user.phoneNumberConfirm(
-				{ phoneNumber, code: verificationCode },
-				{
-					onSuccess: onSuccess("Phone verified successfully!"),
-				},
-			);
-
-			store.setKey("isPhoneVerified", true);
-			store.setKey("phoneSuccess", null);
-			store.setKey("verificationCode", "");
-			return true;
-		} catch (e: any) {
-			// Provide user-friendly error messages
-			let errorMessage = "Invalid verification code";
-			if (e.message?.includes("expired")) {
-				errorMessage = "Verification code has expired. Please request a new one.";
-			} else if (e.message?.includes("incorrect") || e.message?.includes("invalid")) {
-				errorMessage = "Incorrect verification code. Please try again.";
-			}
-			store.setKey("verifyError", errorMessage);
-			return false;
-		} finally {
-			store.setKey("isVerifying", false);
-		}
-	},
-
-	async checkout(
-		paymentMethod: string = PaymentMethodType.Cash,
-		reservationBlocks?: Block[],
-		promoCode?: string,
-	) {
-		const state = store.get();
-		if (state.loading || !state.items.length) return { success: false, error: "No parts in cart" };
-
-		store.setKey("loading", true);
-
-		try {
-			const result = await arky.reservation.checkout({
-				blocks: reservationBlocks || [],
-				items: state.items,
-				paymentMethod,
-				promoCode,
-			});
-
-			return {
-				success: true,
-				data: {
-					reservationId: result?.reservationId,
-					clientSecret: result?.clientSecret,
-				},
-			};
-		} catch (e: any) {
-			console.error("Reservation checkout error:", e);
-			return { success: false, error: e.message };
-		} finally {
-			store.setKey("loading", false);
-		}
-	},
-
-	async fetchQuote(paymentMethod: string = PaymentMethodType.Cash, promoCode?: string) {
-		const state = store.get();
-
-		console.log("fetchQuote called with promoCode:", promoCode);
-
-		if (!state.items.length) {
-			store.setKey("quote", null);
-			store.setKey("quoteError", null);
-			return;
-		}
-
-		store.setKey("fetchingQuote", true);
-		store.setKey("quoteError", null);
-
-		try {
-			const result = await arky.reservation.getQuote({
-				items: state.items,
-				paymentMethod,
-				promoCode,
-			});
-
-			console.log("Quote received:", result);
-			store.setKey("quote", result);
-			store.setKey("quoteError", null);
-		} catch (e: any) {
-			console.error("Fetch quote error:", e);
-			store.setKey("quote", null);
-			store.setKey("quoteError", e.message || "Failed to get quote");
-		} finally {
-			store.setKey("fetchingQuote", false);
-		}
-	},
-
-	// Helpers
-	getLabel(block: any, locale: string = getLocale()): string {
-		if (!block) return "";
-
-		if (block.properties?.label) {
-			if (typeof block.properties.label === "object") {
-				return (
-					block.properties.label[locale] ||
-					block.properties.label.en ||
-					Object.values(block.properties.label)[0] ||
-					""
-				);
-			}
-			if (typeof block.properties.label === "string") {
-				return block.properties.label;
-			}
-		}
-		return block.key || "";
-	},
-
-	getServicePrice(): string {
-		const state = store.get();
-		if (state.service?.prices && Array.isArray(state.service.prices)) {
-			// Market-based pricing (amounts are minor units)
-			// TODO: Get market from business config instead of hardcoded 'us'
-			return arky.utils.getMarketPrice(state.service.prices, "us");
-		}
-		return "";
-	},
-
-	// NEW: Get reservation total as Payment structure
-	getReservationPayment(): Payment {
-		const state = store.get();
-		const subtotalMinor = state.items.reduce((sum, part) => {
-			const servicePrices = state.service?.prices || [];
-			// amounts are in minor units
-			const amountMinor =
-				servicePrices.length > 0 ? arky.utils.getPriceAmount(servicePrices, "US") : 0;
-			return sum + amountMinor;
-		}, 0);
-
-		return arky.utils.createPaymentForCheckout(
-			subtotalMinor,
-			"US",
-			state.currency,
-			PaymentMethodType.Cash,
-		);
-	},
+  setService: async (service: any) => {
+    const isMultiDayBlock = service?.blocks?.find((b: any) => b.key === "isMultiDay");
+    const isMultiDay = isMultiDayBlock?.value?.[0] === true;
+    await engine.setService(service.id);
+    store.setKey("isMultiDay" as any, isMultiDay);
+    store.setKey("service", service);
+    if (service.prices?.[0]?.currency) {
+      store.setKey("currency" as any, service.prices[0].currency);
+    }
+  },
+
+  handleMethodSelection: async (method: string, advance: boolean = true) => {
+    engine.selectMethod(method);
+    if (method.includes("SPECIFIC")) {
+      const providers = await engine.getProvidersList();
+      store.setKey("providers", providers);
+      if (advance && providers.length === 1) {
+        engine.selectProvider(providers[0]);
+      }
+    }
+  },
+
+  selectDate: (cell: CalendarDay) => {
+    if (cell.blank || !cell.available) return;
+    store.setKey("dateTimeConfirmed" as any, false);
+    const state = store.get() as any;
+
+    if (state.isMultiDay) {
+      if (!state.startDate) {
+        store.setKey("startDate", cell.iso);
+        store.setKey("selectedDate", cell.iso);
+        store.setKey("endDate", null);
+        store.setKey("selectedSlot", null);
+      } else if (!state.endDate) {
+        if (cell.date.getTime() < new Date(state.startDate).getTime()) {
+          store.setKey("startDate", cell.iso);
+          store.setKey("endDate", state.startDate);
+        } else {
+          store.setKey("endDate", cell.iso);
+        }
+        actions.createMultiDaySlot();
+      } else {
+        store.setKey("startDate", cell.iso);
+        store.setKey("selectedDate", cell.iso);
+        store.setKey("endDate", null);
+        store.setKey("selectedSlot", null);
+      }
+      engine.updateCalendar();
+    } else {
+      engine.selectDate(cell);
+    }
+  },
+
+  createMultiDaySlot: () => {
+    const state = store.get() as any;
+    if (!state.startDate || !state.endDate) return;
+
+    const startDT = new Date(state.startDate);
+    startDT.setHours(9, 0, 0, 0);
+    const endDT = new Date(state.endDate);
+    endDT.setHours(17, 0, 0, 0);
+    const from = Math.floor(startDT.getTime() / 1000);
+    const to = Math.floor(endDT.getTime() / 1000);
+    const providerId = state.selectedProvider?.id || state.providers[0]?.id || "";
+
+    const slot = {
+      id: `multi-${from}-${to}`,
+      serviceId: state.service?.id || "",
+      providerId,
+      from,
+      to,
+      timeText: "9:00 AM - 5:00 PM daily",
+      dateText: `${state.startDate} to ${state.endDate}`,
+      isMultiDay: true,
+    };
+    store.setKey("slots", [slot]);
+    store.setKey("selectedSlot", slot);
+  },
+
+  selectTimeSlot: (slot: Slot | null) => {
+    store.setKey("dateTimeConfirmed" as any, false);
+    engine.selectSlot(slot as Slot);
+  },
+
+  resetDateSelection: () => {
+    store.setKey("selectedDate", null);
+    store.setKey("startDate", null);
+    store.setKey("endDate", null);
+    store.setKey("slots", []);
+    store.setKey("selectedSlot", null);
+    store.setKey("dateTimeConfirmed" as any, false);
+  },
+
+  addToCart: () => {
+    const state = store.get();
+    if (!state.selectedSlot) return;
+    const enrichedSlot = {
+      ...state.selectedSlot,
+      serviceName: state.service?.name?.en || state.service?.name || "",
+      date: state.selectedSlot.dateText,
+      reservationMethod: state.selectedMethod,
+      serviceBlocks: state.service?.reservationBlocks || [],
+    };
+    engine.addToCart();
+    const cart = store.get().cart;
+    if (cart.length > 0) {
+      cart[cart.length - 1] = { ...cart[cart.length - 1], ...enrichedSlot };
+      store.setKey("cart", [...cart]);
+    }
+  },
+
+  checkout: async (paymentMethod?: string, blocks?: any[], promoCode?: string) => {
+    try {
+      const result = await engine.checkout({ paymentMethod, blocks, promoCode });
+      return { success: true, data: result };
+    } catch (e: any) {
+      return { success: false, error: e.message };
+    }
+  },
+
+  fetchQuote: async (paymentMethod?: string, promoCode?: string) => {
+    store.setKey("fetchingQuote" as any, true);
+    store.setKey("quoteError" as any, null);
+    try {
+      const quote = await engine.getQuote({ paymentMethod, promoCode });
+      store.setKey("quote" as any, quote);
+      return quote;
+    } catch (e: any) {
+      store.setKey("quoteError" as any, e.message);
+      return null;
+    } finally {
+      store.setKey("fetchingQuote" as any, false);
+    }
+  },
+
+  prevStep: () => {
+    const current = currentStepName.get();
+    const state = store.get() as any;
+
+    if (current === "review") {
+      store.setKey("dateTimeConfirmed" as any, false);
+      return;
+    }
+
+    const idx = getStepIndex(current);
+    for (let i = idx - 1; i >= 0; i--) {
+      const step = STEP_ORDER[i];
+      if (step === "method" && state.service?.reservationMethods?.length > 1) {
+        store.setKey("selectedMethod", null);
+        store.setKey("dateTimeConfirmed" as any, false);
+        return;
+      }
+      if (step === "provider" && state.selectedMethod?.includes("SPECIFIC")) {
+        store.setKey("selectedProvider", null);
+        store.setKey("dateTimeConfirmed" as any, false);
+        return;
+      }
+      if (step === "datetime") {
+        store.setKey("selectedSlot", null);
+        store.setKey("dateTimeConfirmed" as any, false);
+        return;
+      }
+    }
+  },
+
+  nextStep: () => {
+    const current = currentStepName.get();
+    if (current === "datetime" && canProceed.get()) {
+      store.setKey("dateTimeConfirmed" as any, true);
+    }
+  },
+
+  getServicePrice: (): string => {
+    const state = store.get();
+    if (!state.service?.prices) return "";
+    return arky.utils.getMarketPrice(state.service.prices, "us") || "";
+  },
+
+  addPhoneNumber: async () => {
+    const state = store.get();
+    const phone = (state as any).phoneNumber;
+    if (!phone) return { success: false, error: "No phone number" };
+    try {
+      await arky.user.sendPhoneCode({ phone });
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e.message };
+    }
+  },
+
+  phoneNumberConfirm: async () => {
+    const state = store.get();
+    const code = (state as any).verificationCode;
+    if (!code) return { success: false, error: "No verification code" };
+    try {
+      await arky.user.verifyPhoneCode({ code });
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e.message };
+    }
+  },
+
+  formatDateDisplay,
 };
+
+export const cartParts = persistentAtom<Slot[]>("reservationCart", [], {
+  encode: JSON.stringify,
+  decode: JSON.parse,
+});
+
+store.subscribe((state) => {
+  if (!cartInitialized) return;
+  const currentCart = cartParts.get();
+  if (JSON.stringify(state.cart) !== JSON.stringify(currentCart)) {
+    cartParts.set(state.cart);
+  }
+});
+
+cartParts.subscribe((cart) => {
+  if (!cartInitialized) return;
+  const currentCart = store.get().cart;
+  if (JSON.stringify(cart) !== JSON.stringify(currentCart)) {
+    store.setKey("cart", cart);
+  }
+});
 
 export function initReservationStore() {
-	actions.updateCalendarGrid();
-	businessActions.init(); // Use unified business store
-
-	const savedParts = cartParts.get();
-	if (savedParts && savedParts.length > 0) {
-		store.setKey("items", savedParts);
-	}
-
-	store.listen((state) => {
-		if (
-			state.isMultiDay &&
-			state.startDate &&
-			state.endDate &&
-			currentStepName.get() === "datetime" &&
-			(!state.slots.length || !state.slots[0].isMultiDay)
-		) {
-			actions.createMultiDaySlot();
-		}
-
-		if (JSON.stringify(state.items) !== JSON.stringify(cartParts.get())) {
-			cartParts.set(state.items);
-		}
-	});
-
-	cartParts.listen((parts) => {
-		const currentParts = store.get().items;
-		if (JSON.stringify(parts) !== JSON.stringify(currentParts)) {
-			store.setKey("items", parts);
-		}
-	});
+  if (cartInitialized) return;
+  const savedCart = cartParts.get();
+  if (savedCart?.length) {
+    store.setKey("cart", savedCart);
+  }
+  cartInitialized = true;
 }
 
-function mapQuoteError(code?: string, fallback?: string): string {
-	switch (code) {
-		case "PROMO.MIN_ORDER":
-			return fallback || "Promo requires a higher minimum order.";
-		case "PROMO.NOT_ACTIVE":
-			return "Promo code is not active.";
-		case "PROMO.NOT_YET_VALID":
-			return "Promo code is not yet valid.";
-		case "PROMO.EXPIRED":
-			return "Promo code has expired.";
-		case "PROMO.MAX_USES":
-			return "Promo code usage limit exceeded.";
-		case "PROMO.MAX_USES_PER_USER":
-			return "You have already used this promo code.";
-		case "PROMO.NOT_FOUND":
-			return "Promo code not found.";
-		default:
-			return fallback || "Failed to get quote.";
-	}
-}
-
-export default { store, actions, initReservationStore };
+export default { store, engine, actions, initReservationStore };

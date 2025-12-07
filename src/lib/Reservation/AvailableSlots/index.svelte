@@ -77,7 +77,7 @@
 			</div>
 
 			<!-- generated range slot -->
-			{#if $store.slots.length && $store.slots[0].isMultiDay}
+			{#if $store.slots.length}
 				<div class="border-primary-700 bg-primary-900/30 mt-2 flex items-center gap-3 rounded-lg border p-3">
 					<Icon icon="mdi:clock-outline" class="h-5 w-5 text-secondary"/>
 					<span class="text-primary font-medium">{$store.slots[0].timeText}</span>

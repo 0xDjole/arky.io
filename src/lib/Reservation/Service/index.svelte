@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import Icon from '@iconify/svelte';
 	import { getGalleryThumbnail } from '../../index';
-	import { store, actions, initReservationStore, canProceed, currentStepName } from '@lib/core/stores/reservation';
+	import { store, actions, initReservationStore, canProceed, currentStepName, totalSteps } from '@lib/core/stores/reservation';
  	import { t, getLocale, getRelativeLocaleUrl } from '@lib/i18n/index';
 	import appConfig from '../../../appConfig';
 	import { arky } from '@lib/index';
@@ -93,7 +93,7 @@
 		</div>
 
 		<div class="p-6 space-y-6">
-			{#if $store.totalSteps > 1}
+			{#if $totalSteps > 1}
 				<StepIndicator />
 			{/if}
 
@@ -139,7 +139,7 @@
 					</div>
 				</div>
 
-				{#if $store.totalSteps > 1}
+				{#if $totalSteps > 1}
 					<div class="flex justify-between pt-6">
 						<button class="bg-tertiary hover:bg-secondary text-primary px-4 py-2 rounded-lg flex items-center gap-2"
 						        on:click={() => actions.prevStep()}>
