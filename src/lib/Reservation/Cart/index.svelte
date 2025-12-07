@@ -38,6 +38,7 @@
 	});
 
 	$effect(() => {
+		if (paymentProcessing) return;
 		const allowedMethods = $paymentMethods || ['CASH'];
 		if (allowedMethods.length > 0 && !allowedMethods.includes(selectedPaymentMethod)) {
 			selectedPaymentMethod = allowedMethods[0];
@@ -253,7 +254,7 @@ async function handleApplyPromoCode(code: string) {
 			showShipping={false}
 		/>
 
-		{#if selectedPaymentMethod === 'CREDIT_CARD'}
+		{#if ($paymentMethods || []).length > 0}
 			<PaymentForm
 				allowedMethods={$paymentMethods || ['CASH']}
 				paymentProvider={$paymentConfig?.provider}
@@ -264,84 +265,6 @@ async function handleApplyPromoCode(code: string) {
 				error={paymentError}
 				variant="reservation"
 			/>
-		{:else}
-			{@const availableMethods = $paymentMethods || ['CASH']}
-			<!-- Payment method selection only -->
-			<div class="space-y-4">
-				<div>
-					<div class="grid gap-3" class:grid-cols-2={availableMethods.length > 1} class:grid-cols-1={availableMethods.length === 1}>
-						{#if availableMethods.includes('CASH')}
-							<button
-								type="button"
-								class="relative flex items-center p-4 rounded-lg cursor-pointer transition-all border-2"
-								class:border-primary={selectedPaymentMethod === 'CASH'}
-								class:bg-primary={selectedPaymentMethod === 'CASH'}
-								class:shadow-sm={selectedPaymentMethod === 'CASH'}
-								class:border-transparent={selectedPaymentMethod !== 'CASH'}
-								class:bg-secondary={selectedPaymentMethod !== 'CASH'}
-								class:hover:bg-tertiary={selectedPaymentMethod !== 'CASH'}
-								onclick={() => selectedPaymentMethod = 'CASH'}
-							>
-								{#if selectedPaymentMethod === 'CASH'}
-									<div class="absolute top-2 right-2">
-										<Icon icon="mdi:check-circle" class="w-5 h-5 text-primary" />
-									</div>
-								{/if}
-								<div class="flex items-center gap-3">
-									<div class="flex items-center justify-center w-12 h-12 rounded-full bg-background">
-										<Icon icon="mdi:cash" class="w-6 h-6 text-primary" />
-									</div>
-									<div class="text-left">
-										<div class="font-semibold"
-											class:text-primary-foreground={selectedPaymentMethod === 'CASH'}
-											class:text-primary={selectedPaymentMethod !== 'CASH'}
-										>Cash Payment</div>
-										<div class="text-sm"
-											class:text-primary-foreground={selectedPaymentMethod === 'CASH'}
-											class:text-secondary={selectedPaymentMethod !== 'CASH'}
-										>Pay at appointment</div>
-									</div>
-								</div>
-							</button>
-						{/if}
-
-						{#if availableMethods.includes('CREDIT_CARD') && $paymentConfig?.provider}
-							<button
-								type="button"
-								class="relative flex items-center p-4 rounded-lg cursor-pointer transition-all border-2"
-								class:border-primary={selectedPaymentMethod === 'CREDIT_CARD'}
-								class:bg-primary={selectedPaymentMethod === 'CREDIT_CARD'}
-								class:shadow-sm={selectedPaymentMethod === 'CREDIT_CARD'}
-								class:border-transparent={selectedPaymentMethod !== 'CREDIT_CARD'}
-								class:bg-secondary={selectedPaymentMethod !== 'CREDIT_CARD'}
-								class:hover:bg-tertiary={selectedPaymentMethod !== 'CREDIT_CARD'}
-								onclick={() => selectedPaymentMethod = 'CREDIT_CARD'}
-							>
-								{#if selectedPaymentMethod === 'CREDIT_CARD'}
-									<div class="absolute top-2 right-2">
-										<Icon icon="mdi:check-circle" class="w-5 h-5 text-primary" />
-									</div>
-								{/if}
-								<div class="flex items-center gap-3">
-									<div class="flex items-center justify-center w-12 h-12 rounded-full bg-background">
-										<Icon icon="mdi:credit-card" class="w-6 h-6 text-primary" />
-									</div>
-									<div class="text-left">
-										<div class="font-semibold"
-											class:text-primary-foreground={selectedPaymentMethod === 'CREDIT_CARD'}
-											class:text-primary={selectedPaymentMethod !== 'CREDIT_CARD'}
-										>Card Payment</div>
-										<div class="text-sm"
-											class:text-primary-foreground={selectedPaymentMethod === 'CREDIT_CARD'}
-											class:text-secondary={selectedPaymentMethod !== 'CREDIT_CARD'}
-										>Secure online payment</div>
-									</div>
-								</div>
-							</button>
-						{/if}
-					</div>
-				</div>
-			</div>
 		{/if}
 
 		<!-- Form validation errors summary removed -->
