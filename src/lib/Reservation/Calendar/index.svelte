@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Icon from '@iconify/svelte';
-	import { store, engine, actions, monthYear } from '@lib/core/stores/reservation';
+	import { store, actions, monthYear } from '@lib/core/stores/reservation';
 
 	function discClass(cell) {
 		if (cell.blank) return '';
@@ -29,7 +29,7 @@
 
 		<div class="relative flex items-center justify-between">
 			<button aria-label="Previous month"
-			        on:click={() => engine.prevMonth()}
+			        on:click={() => actions.prevMonth()}
 			        class="bg-secondary text-muted border-primary hover:bg-tertiary hover:text-primary flex h-10 w-10 items-center justify-center rounded-full border transition">
 				<Icon icon="mdi:chevron-left" class="h-5 w-5"/>
 			</button>
@@ -37,7 +37,7 @@
 			<h3 class="text-xl font-bold tracking-wide text-primary">{$monthYear}</h3>
 
 			<button aria-label="Next month"
-			        on:click={() => engine.nextMonth()}
+			        on:click={() => actions.nextMonth()}
 			        class="bg-secondary text-muted border-primary hover:bg-tertiary hover:text-primary flex h-10 w-10 items-center justify-center rounded-full border transition">
 				<Icon icon="mdi:chevron-right" class="h-5 w-5"/>
 			</button>

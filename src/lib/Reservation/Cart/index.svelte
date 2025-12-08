@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Icon from '@iconify/svelte';
 	import DynamicForm from '@lib/DynamicForm/index.svelte';
-	import { store, engine, actions, initReservationStore, cartParts } from '@lib/core/stores/reservation';
+	import { store, actions, initReservationStore, cartParts } from '@lib/core/stores/reservation';
 	import { reservationBlocks, paymentMethods, paymentConfig, currency } from '@lib/core/stores/business';
 	import { onMount } from 'svelte';
 	import { t } from '../../../lib/i18n/index';
@@ -127,7 +127,7 @@ async function handleApplyPromoCode(code: string) {
 				showToast(message, 'success', 6000);
 
 				// Clear cart and promo code
-				engine.clearCart();
+				actions.clearCart();
 				cartParts.set([]);
 				appliedPromoCode = null;
 				return;
@@ -157,7 +157,7 @@ async function handleApplyPromoCode(code: string) {
 			}
 
 			// Clear cart and promo code on success
-			engine.clearCart();
+			actions.clearCart();
 			cartParts.set([]);
 			appliedPromoCode = null;
 
@@ -226,7 +226,7 @@ async function handleApplyPromoCode(code: string) {
 
 						<button
 							class="hover:bg-tertiary flex h-8 w-8 items-center justify-center rounded-full text-red-500 hover:text-red-600 transition"
-							onclick={() => engine.removeFromCart(part.id)}
+							onclick={() => actions.removeFromCart(part.id)}
 							aria-label={t('cart.remove')}>
 							<Icon icon="mdi:trash-can-outline" class="h-5 w-5" />
 						</button>

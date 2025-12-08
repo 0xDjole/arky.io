@@ -1,12 +1,16 @@
 <script>
 	import Icon from '@iconify/svelte';
-	import { store, engine } from '@lib/core/stores/reservation';
+	import { store, actions } from '@lib/core/stores/reservation';
 	import { t } from '../../../lib/i18n/index';
 
-	const changeTZ = (e) => engine.setTimezone(e.target.value);
-	
+	const changeTZ = (e) => actions.setTimezone(e.target.value);
+
+	// Safely get tzGroups, defaulting to empty object
+	const tzGroups = $derived($store.tzGroups || {});
+
 	function isMissingTimezone() {
-		return !Object.values($store.tzGroups).flat().some((t) => t.zone === $store.timezone);
+		if (!tzGroups || Object.keys(tzGroups).length === 0) return true;
+		return !Object.values(tzGroups).flat().some((t) => t.zone === $store.timezone);
 	}
 </script>
 
@@ -22,7 +26,7 @@
 			bind:value={$store.timezone}
 			on:change={changeTZ}
 		>
-			{#each Object.entries($store.tzGroups) as [region, zones]}
+			{#each Object.entries(tzGroups) as [region, zones]}
 				<optgroup label={region} class="bg-tertiary text-secondary">
 					{#each zones as tz}
 						<option value={tz.zone}>{tz.name}</option>
