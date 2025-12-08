@@ -1,15 +1,7 @@
 import { computed, deepMap } from "nanostores";
 import { BUSINESS_ID } from "../config";
 import { arky } from "@lib/index";
-import type {
-	Business,
-	Market,
-	ShippingMethod,
-	Zone,
-	PaymentMethod,
-	PaymentProviderConfig,
-} from "../types";
-import { PaymentMethodType } from "../types";
+import type { Business, Zone } from "../types";
 
 export const businessStore = deepMap({
 	data: null as Business | null,
@@ -45,49 +37,6 @@ export const zones = computed(businessStore, (state) => {
 export const getZonesForMarket = (marketId: string): Zone[] => {
 	const allZones = zones.get();
 	return allZones.filter(z => z.marketId === marketId);
-};
-
-export const getZoneForCountry = (countryCode: string): Zone | null => {
-	const market = selectedMarket.get();
-	if (!market) return null;
-
-	const marketZones = getZonesForMarket(market.id);
-	if (marketZones.length === 0) return null;
-
-	const upperCode = countryCode?.toUpperCase();
-
-	const countryZone = marketZones.find(z =>
-		z.countries.some(c => c.toUpperCase() === upperCode)
-	);
-	if (countryZone) return countryZone;
-
-	const globalZone = marketZones.find(z => z.countries.length === 0);
-	return globalZone || null;
-};
-
-export const getZoneIdForCountry = (countryCode: string): string | null => {
-	const zone = getZoneForCountry(countryCode);
-	return zone?.id || null;
-};
-
-// Get shipping methods directly from zone (no more master list)
-export const getShippingMethodsForCountry = (countryCode: string): ShippingMethod[] => {
-	const zone = getZoneForCountry(countryCode);
-	if (!zone) return [];
-	return zone.shippingMethods || [];
-};
-
-// Get payment methods directly from zone (no more master list)
-export const getPaymentMethodsForCountry = (countryCode: string): PaymentMethod[] => {
-	const zone = getZoneForCountry(countryCode);
-	if (!zone) return [];
-	return zone.paymentMethods || [];
-};
-
-// Get payment method types for a country
-export const getPaymentMethodTypesForCountry = (countryCode: string): string[] => {
-	const paymentMethods = getPaymentMethodsForCountry(countryCode);
-	return paymentMethods.map(pm => pm.type);
 };
 
 export const paymentMethods = computed(selectedMarket, (market) => {

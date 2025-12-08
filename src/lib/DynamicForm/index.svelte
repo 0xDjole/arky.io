@@ -2,45 +2,57 @@
 	import Icon from '@iconify/svelte';
 	import { onMount } from 'svelte';
 	import { getLocale, getLocaleFromUrl, t } from '@lib/i18n/index.js';
-	import { getBlockLabel } from '@lib/index.ts';
+	import { getBlockLabel, arky } from '@lib/index.ts';
 	import PhoneInput from '@lib/shared/PhoneInput/index.svelte';
 	import TextInput from './TextInput.svelte';
 	import TextAreaInput from './TextAreaInput.svelte';
 	import SelectInput from './SelectInput.svelte';
 	import CheckboxInput from './CheckboxInput.svelte';
-import RangeInput from './RangeInput.svelte';
-import { countries } from 'countries-list';
-import { selectedMarket, zones, getZonesForMarket } from '../core/stores/business';
+	import RangeInput from './RangeInput.svelte';
+	import { selectedMarket, zones, getZonesForMarket } from '../core/stores/business';
 
-const ALL_COUNTRIES = Object.entries(countries)
-    .map(([iso, data]) => ({
-        iso: iso,
-        name: data.name
-    }))
-    .sort((a, b) => a.name.localeCompare(b.name));
+	// Location data from SDK
+	let countriesData = $state<Array<{ code: string; name: string; states: Array<{ code: string; name: string }> }>>([]);
+	let loadingCountries = $state(true);
 
-let availableCountries = $derived.by(() => {
-    const market = $selectedMarket;
-    if (!market) return [];
+	onMount(async () => {
+		try {
+			const response = await arky.location.getCountries();
+			countriesData = response.items || [];
+		} catch (error) {
+			console.error('Failed to load countries:', error);
+		} finally {
+			loadingCountries = false;
+		}
+	});
 
-    const marketZones = getZonesForMarket(market.id);
-    if (marketZones.length === 0) return [];
+	const ALL_COUNTRIES = $derived(
+		countriesData.map(c => ({ iso: c.code, name: c.name }))
+			.sort((a, b) => a.name.localeCompare(b.name))
+	);
 
-    const hasGlobalZone = marketZones.some(z => z.countries.length === 0);
-    if (hasGlobalZone) {
-        return ALL_COUNTRIES;
-    }
+	let availableCountries = $derived.by(() => {
+		const market = $selectedMarket;
+		if (!market || countriesData.length === 0) return [];
 
-    const uniqueCountryCodes = new Set<string>();
-    marketZones.forEach(zone => {
-        zone.countries.forEach(countryCode => uniqueCountryCodes.add(countryCode));
-    });
+		const marketZones = getZonesForMarket(market.id);
+		if (marketZones.length === 0) return [];
 
-    return Array.from(uniqueCountryCodes)
-        .map(iso => ALL_COUNTRIES.find(c => c.iso === iso))
-        .filter(c => c !== undefined)
-        .sort((a, b) => a.name.localeCompare(b.name));
-});
+		const hasGlobalZone = marketZones.some(z => z.countries.length === 0);
+		if (hasGlobalZone) {
+			return ALL_COUNTRIES;
+		}
+
+		const uniqueCountryCodes = new Set<string>();
+		marketZones.forEach(zone => {
+			zone.countries.forEach(countryCode => uniqueCountryCodes.add(countryCode));
+		});
+
+		return Array.from(uniqueCountryCodes)
+			.map(iso => ALL_COUNTRIES.find(c => c.iso === iso))
+			.filter(c => c !== undefined)
+			.sort((a, b) => a.name.localeCompare(b.name));
+	});
 
 	// Props
 	let {
@@ -125,7 +137,7 @@ let availableCountries = $derived.by(() => {
 		setTimeout(validateAllFields, 0);
 	}
 
-	function getAvailableStates(selectedCountry: string) {
+	function getAvailableStates(selectedCountry: string): Array<{ code: string; name: string }> {
 		const market = $selectedMarket;
 		if (!market || !selectedCountry) return [];
 
@@ -134,31 +146,39 @@ let availableCountries = $derived.by(() => {
 			z.countries.length === 0 || z.countries.includes(selectedCountry)
 		);
 
-		const uniqueStates = new Set<string>();
+		// If ANY matching zone has empty states array, show all states from SDK
+		// This means that zone accepts all states for this country
+		const hasZoneWithAllStates = matchingZones.some(z => !z.states || z.states.length === 0);
+
+		if (hasZoneWithAllStates) {
+			// Show all states from SDK for this country
+			const countryData = countriesData.find(c => c.code === selectedCountry);
+			if (!countryData || !countryData.states) return [];
+			// Copy array before sorting to avoid mutating state
+			return [...countryData.states].sort((a, b) => a.name.localeCompare(b.name));
+		}
+
+		// All matching zones have specific states - collect and show only those
+		const zoneStates = new Set<string>();
 		matchingZones.forEach(zone => {
-			zone.states.forEach(state => uniqueStates.add(state));
+			(zone.states || []).forEach(state => zoneStates.add(state));
 		});
 
-		return Array.from(uniqueStates).sort();
-	}
+		if (zoneStates.size === 0) {
+			// No states defined in any zone - country doesn't use states
+			return [];
+		}
 
-	function getAvailableCities(selectedCountry: string, selectedState: string | null) {
-		const market = $selectedMarket;
-		if (!market || !selectedCountry) return [];
-
-		const marketZones = getZonesForMarket(market.id);
-		const matchingZones = marketZones.filter(z => {
-			const countryMatch = z.countries.length === 0 || z.countries.includes(selectedCountry);
-			const stateMatch = !selectedState || z.states.length === 0 || z.states.includes(selectedState);
-			return countryMatch && stateMatch;
-		});
-
-		const uniqueCities = new Set<string>();
-		matchingZones.forEach(zone => {
-			zone.cities.forEach(city => uniqueCities.add(city));
-		});
-
-		return Array.from(uniqueCities).sort();
+		const countryData = countriesData.find(c => c.code === selectedCountry);
+		if (!countryData) {
+			// No SDK data for country, return zone states as-is
+			return Array.from(zoneStates).map(s => ({ code: s, name: s })).sort((a, b) => a.name.localeCompare(b.name));
+		}
+		// Return only states that are in both zone config AND SDK data
+		// filter() already creates a new array so sort() is safe here
+		return countryData.states
+			.filter(s => zoneStates.has(s.code))
+			.sort((a, b) => a.name.localeCompare(b.name));
 	}
 
 	function updateBlockValue(idx: number, value: string) {
@@ -326,30 +346,16 @@ let availableCountries = $derived.by(() => {
 
 					{#if getGeo(block).countryCode}
 						{@const availableStates = getAvailableStates(getGeo(block).countryCode)}
-						{@const availableCities = getAvailableCities(getGeo(block).countryCode, getGeo(block).state)}
-
-						<input
-							type="text"
-							class="w-full p-3 bg-muted border-0 rounded-lg focus:bg-background transition-colors text-foreground placeholder-gray-500 text-base"
-							placeholder="Address"
-							value={getGeo(block).address || ''}
-							oninput={(e) => updateGeo(idx, { address: e.currentTarget.value })}
-						/>
 
 						{#if availableStates.length > 0}
 							<select
 								class="w-full p-3 bg-muted border-0 rounded-lg focus:bg-background transition-colors text-foreground text-base"
 								value={getGeo(block).state || ''}
-								onchange={(e) => {
-									updateGeo(idx, {
-										state: e.currentTarget.value,
-										city: null
-									});
-								}}
+								onchange={(e) => updateGeo(idx, { state: e.currentTarget.value })}
 							>
 								<option value="">Select a state...</option>
 								{#each availableStates as state}
-									<option value={state}>{state}</option>
+									<option value={state.code}>{state.name}</option>
 								{/each}
 							</select>
 						{:else}
@@ -363,26 +369,13 @@ let availableCountries = $derived.by(() => {
 						{/if}
 
 						<div class="grid grid-cols-2 gap-3">
-							{#if availableCities.length > 0}
-								<select
-									class="w-full p-3 bg-muted border-0 rounded-lg focus:bg-background transition-colors text-foreground text-base"
-									value={getGeo(block).city || ''}
-									onchange={(e) => updateGeo(idx, { city: e.currentTarget.value })}
-								>
-									<option value="">Select a city...</option>
-									{#each availableCities as city}
-										<option value={city}>{city}</option>
-									{/each}
-								</select>
-							{:else}
-								<input
-									type="text"
-									class="w-full p-3 bg-muted border-0 rounded-lg focus:bg-background transition-colors text-foreground placeholder-gray-500 text-base"
-									placeholder="City"
-									value={getGeo(block).city || ''}
-									oninput={(e) => updateGeo(idx, { city: e.currentTarget.value })}
-								/>
-							{/if}
+							<input
+								type="text"
+								class="w-full p-3 bg-muted border-0 rounded-lg focus:bg-background transition-colors text-foreground placeholder-gray-500 text-base"
+								placeholder="City"
+								value={getGeo(block).city || ''}
+								oninput={(e) => updateGeo(idx, { city: e.currentTarget.value })}
+							/>
 
 							<input
 								type="text"
@@ -392,6 +385,14 @@ let availableCountries = $derived.by(() => {
 								oninput={(e) => updateGeo(idx, { postalCode: e.currentTarget.value })}
 							/>
 						</div>
+
+						<input
+							type="text"
+							class="w-full p-3 bg-muted border-0 rounded-lg focus:bg-background transition-colors text-foreground placeholder-gray-500 text-base"
+							placeholder="Address"
+							value={getGeo(block).address || ''}
+							oninput={(e) => updateGeo(idx, { address: e.currentTarget.value })}
+						/>
 					{/if}
 				</div>
 

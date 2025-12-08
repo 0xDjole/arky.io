@@ -2,7 +2,7 @@
 	import { onMount, } from 'svelte';
 	import { showToast } from '@lib/toast.js';
 	import { cartItems,  cartItemCount, store, actions, initEshopStore, currency, allowedPaymentMethods, orderBlocks as businessOrderBlocks, paymentConfig, quoteAtom } from '@lib/core/stores/eshop';
-	import { getShippingMethodsForCountry, getPaymentMethodsForCountry, selectedMarket } from '@lib/core/stores/business';
+	import { selectedMarket } from '@lib/core/stores/business';
 	import { arky } from '@lib/index';
 	import QuantitySelector from '@lib/EShop/QuantitySelector/index.svelte';
 	import AttributeBlocks from '@lib/EShop/AttributeBlocks/index.svelte';
@@ -27,18 +27,20 @@
 	let selectedShippingMethodId = $derived($store.selectedShippingMethodId);
 
     const locationBlock = $derived(orderBlocks.find((b) => b.key === 'location' && b.type === 'GEO_LOCATION'));
-    const countryCode = $derived(locationBlock?.value?.[0]?.countryCode);
+    const locationData = $derived(locationBlock?.value?.[0]);
+    const countryCode = $derived(locationData?.countryCode);
 
-    const availableShippingMethods = $derived.by(() => {
-        if (!countryCode) return [];
-        return getShippingMethodsForCountry(countryCode) || [];
-    });
+    // Check if all required location fields are filled
+    const locationComplete = $derived(
+        locationData?.countryCode &&
+        locationData?.city &&
+        locationData?.postalCode &&
+        locationData?.address
+    );
 
-    const availablePaymentMethods = $derived.by(() => {
-        if (!countryCode) return [];
-        const methods = getPaymentMethodsForCountry(countryCode);
-        return methods.map(pm => pm.type);
-    });
+    // Get shipping/payment methods from quote response (fetched from backend based on zone)
+    const availableShippingMethods = $derived($quoteAtom?.shippingMethods || []);
+    const availablePaymentMethods = $derived(($quoteAtom?.paymentMethods || []).map(pm => pm.type));
 
     $effect(() => {
         if (availableShippingMethods.length > 0 && selectedShippingMethodId) {
@@ -313,7 +315,7 @@ async function handleApplyPromoCode(code: string) {
 							onValidationChange={handleValidationChange}
 						/>
 
-						{#if availableShippingMethods && availableShippingMethods.length > 0}
+						{#if locationComplete && availableShippingMethods && availableShippingMethods.length > 0}
 							<div>
 								<h4 class="text-lg font-semibold mb-3">Shipping</h4>
 								<div class="grid gap-3">
@@ -347,7 +349,7 @@ async function handleApplyPromoCode(code: string) {
 							</div>
 						{/if}
 
-						{#if countryCode && availablePaymentMethods.length > 0}
+						{#if locationComplete && availablePaymentMethods.length > 0}
 							<PaymentForm
 								allowedMethods={availablePaymentMethods}
 								paymentProvider={$paymentConfig?.provider}

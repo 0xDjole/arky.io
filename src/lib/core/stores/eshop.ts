@@ -5,8 +5,6 @@ import { arky } from "@lib/index";
 import {
 	selectedMarket,
 	currency,
-	getShippingMethodsForCountry,
-	getZoneIdForCountry,
 	paymentMethods,
 	paymentConfig,
 	orderBlocks,
@@ -218,10 +216,11 @@ export const actions = {
 				throw new Error("Country is required for checkout");
 			}
 
-			const availableShippingMethods = getShippingMethodsForCountry(countryCode) || [];
+			const quote = quoteAtom.get();
+			const availableShippingMethods = quote?.shippingMethods || [];
 
 			if (!availableShippingMethods || availableShippingMethods.length === 0) {
-				throw new Error(`No shipping methods available for country: ${countryCode}`);
+				throw new Error(`No shipping methods available for country: ${countryCode}. Please fetch a quote first.`);
 			}
 
 			// Get selected shipping method or first available
@@ -378,9 +377,14 @@ export const actions = {
 		return methods;
 	},
 
-	// Get shipping methods for a country code
-	getShippingMethodsForCountry(countryCode: string) {
-		return getShippingMethodsForCountry(countryCode);
+	getShippingMethods() {
+		const quote = quoteAtom.get();
+		return quote?.shippingMethods || [];
+	},
+
+	getPaymentMethods() {
+		const quote = quoteAtom.get();
+		return quote?.paymentMethods || [];
 	},
 
 	// Fetch quote from backend
