@@ -1,4 +1,3 @@
-// E-shop store with TypeScript - Simplified with Business Store
 import { computed, deepMap } from "nanostores";
 import { persistentAtom } from "@nanostores/persistent";
 import { arky } from "@lib/index";
@@ -10,51 +9,36 @@ import {
 	orderBlocks,
 	businessActions,
 } from "./business";
-import type { EshopCartItem, EshopStoreState, Block, Price, Payment, Quote } from "../types";
+import type { EshopCartItem, EshopStoreState, Block, Price, Payment, Quote, Location } from "../types";
 import { onSuccess, onError } from "@lib/utils/notify";
 import { PaymentMethodType } from "../types";
-import { getLocale } from "@lib/i18n";
+import { getLocale, getLocalizedString } from "@lib/i18n";
 
-function getLocalizedText(value: any): string {
-	if (!value) return '';
-	if (typeof value === 'string') return value;
-	const locale = getLocale();
-	return value[locale] || value.en || Object.values(value)[0] || '';
-}
-
-// Frontend cart items
 export const cartItems = persistentAtom<EshopCartItem[]>("eshopCart", [], {
 	encode: JSON.stringify,
 	decode: JSON.parse,
 });
 
-// Promo code state (not persisted - cleared on page reload)
 export const promoCodeAtom = deepMap<string | null>(null);
 
-// Quote atom (fetched from backend)
 export const quoteAtom = deepMap<Quote | null>(null);
 
-// Simplified store for cart-specific state only
 export const store = deepMap({
-	selectedShippingMethodId: null, // Selected shipping method ID
-	shippingLocation: null, // Deprecated; kept for backward compat
+	selectedShippingMethodId: null,
+	shippingLocation: null,
 	userToken: null,
 	processingCheckout: false,
 	loading: false,
 	error: null,
-	// Phone verification
 	phoneNumber: "",
 	phoneError: null,
 	verificationCode: "",
 	verifyError: null,
-	// Quote fetching
 	fetchingQuote: false,
 	quoteError: null,
 });
 
-// Computed values using business store
 export const cartTotal = computed([cartItems, selectedMarket, currency], (items, market, curr) => {
-	// Return a Payment object with amounts in minor units
 	const subtotalMinor = (items || []).reduce((sum, item) => {
 		let amountMinor = 0;
 		if ("amount" in item.price) {
@@ -79,31 +63,24 @@ export const cartItemCount = computed(cartItems, (items) => {
 	return items.reduce((sum, item) => sum + item.quantity, 0);
 });
 
-// Re-export business store computed values for convenience
 export { currency, paymentConfig, orderBlocks };
 
-// Create alias for backward compatibility
 export const allowedPaymentMethods = paymentMethods;
 
-// Actions
 export const actions = {
-	// Add item to cart
 	addItem(product: any, variant: any, quantity: number = 1) {
 		const items = cartItems.get();
 		const market = selectedMarket.get();
 
-		// Check if item already exists in cart
 		const existingItemIndex = items.findIndex(
 			(item) => item.productId === product.id && item.variantId === variant.id,
 		);
 
 		if (existingItemIndex !== -1) {
-			// Update existing item quantity
 			const updatedItems = [...items];
 			updatedItems[existingItemIndex].quantity += quantity;
 			cartItems.set(updatedItems);
 		} else {
-			// Add new item with market-based pricing
 			if (!variant.prices || !Array.isArray(variant.prices)) {
 				throw new Error("Product variant has no prices configured");
 			}
@@ -112,7 +89,6 @@ export const actions = {
 				throw new Error("No market selected");
 			}
 
-			// Market-based pricing from backend (amounts are minor units)
 			const marketAmount = arky.utils.getPriceAmount(variant.prices, market.id);
 			if (marketAmount === null || marketAmount === undefined) {
 				throw new Error(`No price configured for market: ${market.id}`);
@@ -127,7 +103,7 @@ export const actions = {
 				id: crypto.randomUUID(),
 				productId: product.id,
 				variantId: variant.id,
-				productName: getLocalizedText(product.name),
+				productName: getLocalizedString(product.name, getLocale()),
 				productSlug:
 					product.seo?.slug?.en ||
 					product.seo?.slug?.[Object.keys(product.seo?.slug || {})[0]] ||
@@ -140,12 +116,8 @@ export const actions = {
 
 			cartItems.set([...items, newItem]);
 		}
-
-		// Toast notification should be handled by UI layer
-		// showToast(`${product.name} added to cart!`, "success", 3000);
 	},
 
-	// Update item quantity
 	updateQuantity(itemId: string, newQuantity: number) {
 		const items = cartItems.get();
 		const updatedItems = items.map((item) =>
@@ -154,16 +126,12 @@ export const actions = {
 		cartItems.set(updatedItems);
 	},
 
-	// Remove item from cart
 	removeItem(itemId: string) {
 		const items = cartItems.get();
 		const updatedItems = items.filter((item) => item.id !== itemId);
 		cartItems.set(updatedItems);
-		// Toast notification should be handled by UI layer
-		// showToast("Item removed from cart!", "success", 2000);
 	},
 
-	// Clear entire cart
 	clearCart() {
 		cartItems.set([]);
 	},
@@ -177,14 +145,13 @@ export const actions = {
 		}));
 	},
 
-	// Get order info blocks (they already have values from DynamicForm)
 	getOrderInfoBlocks(): Block[] {
 		return orderBlocks.get() || [];
 	},
 
-	// Process checkout - Updated to use Payment structure
 	async checkout(
 		paymentMethod: string = PaymentMethodType.Cash,
+		location: Location,
 		orderInfoBlocks?: Block[],
 		promoCode?: string | null,
 	) {
@@ -206,24 +173,17 @@ export const actions = {
 				throw new Error("No market selected");
 			}
 
-			const locationBlock = blocks.find((b) => b.key === "location" && b.type === "GEO_LOCATION");
-			const firstLoc = Array.isArray(locationBlock?.value)
-				? locationBlock?.value?.[0]
-				: locationBlock?.value;
-			const countryCode = firstLoc?.countryCode || "";
-
-			if (!countryCode) {
-				throw new Error("Country is required for checkout");
+			if (!location?.countryCode) {
+				throw new Error("Location with country code is required for checkout");
 			}
 
 			const quote = quoteAtom.get();
 			const availableShippingMethods = quote?.shippingMethods || [];
 
 			if (!availableShippingMethods || availableShippingMethods.length === 0) {
-				throw new Error(`No shipping methods available for country: ${countryCode}. Please fetch a quote first.`);
+				throw new Error(`No shipping methods available. Please enter your address first.`);
 			}
 
-			// Get selected shipping method or first available
 			const shippingMethodId = state.selectedShippingMethodId;
 			const shippingMethod =
 				availableShippingMethods.find((sm) => sm.id === shippingMethodId) ||
@@ -233,28 +193,16 @@ export const actions = {
 				throw new Error("No shipping method available");
 			}
 
-			// Convert location block to snake_case for backend
-			const normalizedBlocks = blocks.map((b) => {
-				if (b.key === "location" && b.type === "GEO_LOCATION") {
-					const values = Array.isArray(b.value) ? b.value : [b.value];
-					const snakeCaseValues = values.map((loc: any) => ({
-						...loc,
-						country_code: loc.countryCode,
-					}));
-					return { ...b, value: snakeCaseValues } as Block;
-				}
-				return b;
-			});
-
 			const promo = promoCode !== undefined ? promoCode : promoCodeAtom.get();
 
 			const response = await arky.eshop.checkout(
 				{
 					items: orderItems,
 					paymentMethod: paymentMethod,
-					blocks: normalizedBlocks,
+					blocks,
 					shippingMethodId: shippingMethod.id,
 					promoCode: promo || undefined,
+					location,
 				},
 				{
 					onSuccess: onSuccess("Order placed successfully!"),
@@ -280,7 +228,6 @@ export const actions = {
 		}
 	},
 
-	// Phone verification for eshop
 	async addPhoneNumber(): Promise<boolean> {
 		try {
 			const phoneNumber = store.get().phoneNumber;
@@ -368,7 +315,6 @@ export const actions = {
 		);
 	},
 
-	// Get available payment methods for selected market
 	getAvailablePaymentMethods(): string[] {
 		const methods = paymentMethods.get();
 		if (!methods || methods.length === 0) {
@@ -387,8 +333,7 @@ export const actions = {
 		return quote?.paymentMethods || [];
 	},
 
-	// Fetch quote from backend
-	async fetchQuote(promoCode?: string | null, providedOrderBlocks?: any[]): Promise<void> {
+	async fetchQuote(location: Location, promoCode?: string | null): Promise<void> {
 		const items = cartItems.get();
 		const market = selectedMarket.get();
 		const state = store.get();
@@ -404,32 +349,16 @@ export const actions = {
 			return;
 		}
 
+		if (!location?.countryCode) {
+			store.setKey("quoteError", "Location with country code is required for quote");
+			return;
+		}
+
 		try {
 			store.setKey("fetchingQuote", true);
 			store.setKey("quoteError", null);
 
 			const shippingMethodId = state.selectedShippingMethodId || undefined;
-
-			// Extract location from orderBlocks if available
-			const blocks = providedOrderBlocks || orderBlocks.get() || [];
-			const locationBlock = blocks.find((b) => b.key === "location" && b.type === "GEO_LOCATION");
-			const firstLoc = Array.isArray(locationBlock?.value)
-				? locationBlock?.value?.[0]
-				: locationBlock?.value;
-			const location = firstLoc
-				? {
-						country: firstLoc.country || null,
-						address: firstLoc.address || null,
-						city: firstLoc.city || null,
-						postalCode: firstLoc.postalCode || null,
-						countryCode: firstLoc.countryCode || null,
-						coordinates: firstLoc.coordinates || null,
-					}
-				: undefined;
-
-			if (!location || !location.countryCode) {
-				throw new Error("Location with country code is required for quote");
-			}
 
 			const response = await arky.eshop.getQuote({
 				items: items.map((item) => ({
@@ -459,16 +388,14 @@ export const actions = {
 		}
 	},
 
-	// Apply promo code
-	async applyPromoCode(code: string): Promise<void> {
+	async applyPromoCode(code: string, location: Location): Promise<void> {
 		promoCodeAtom.set(code);
-		await this.fetchQuote();
+		await this.fetchQuote(location, code);
 	},
 
-	// Remove promo code
-	async removePromoCode(): Promise<void> {
+	async removePromoCode(location: Location): Promise<void> {
 		promoCodeAtom.set(null);
-		await this.fetchQuote();
+		await this.fetchQuote(location, null);
 	},
 };
 
@@ -493,13 +420,8 @@ function mapQuoteError(code?: string, fallback?: string): string {
 	}
 }
 
-// Initialize the store
 export function initEshopStore() {
-	// Initialize business data (if not already initialized)
 	businessActions.init();
-
-	// Note: Shipping method selection now happens after user enters shipping address
-	// and we determine their country → zone → available shipping methods
 }
 
 export default {

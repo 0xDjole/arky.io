@@ -45,7 +45,6 @@ export const paymentMethods = computed(selectedMarket, (market) => {
 	const marketZones = getZonesForMarket(market.id);
 	if (marketZones.length === 0) return [];
 
-	// Collect all unique payment method types from all zones in this market
 	const allMethodTypes = new Set<string>();
 	marketZones.forEach(zone => {
 		(zone.paymentMethods || []).forEach(pm => allMethodTypes.add(pm.type));

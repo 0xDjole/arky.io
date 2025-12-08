@@ -1,11 +1,6 @@
-// Reservation store - Full logic moved from SDK engine to arky.io
 import { map, computed } from "nanostores";
 import { persistentAtom } from "@nanostores/persistent";
 import { arky } from "@lib/index";
-
-// ============================================================================
-// Types
-// ============================================================================
 
 interface ServiceDuration {
   duration: number;
@@ -96,7 +91,6 @@ interface ReservationState {
   timezone: string;
   tzGroups: Record<string, { zone: string; name: string }[]>;
   loading: boolean;
-  // Extended state
   weekdays: string[];
   quote: any | null;
   fetchingQuote: boolean;
@@ -107,10 +101,6 @@ interface ReservationState {
   dateTimeConfirmed: boolean;
   isMultiDay: boolean;
 }
-
-// ============================================================================
-// Slot Computation Utilities
-// ============================================================================
 
 function formatTime(ts: number, tz: string): string {
   return new Date(ts * 1000).toLocaleTimeString([], {
@@ -206,10 +196,6 @@ function hasAvailableSlots(opts: {
   return computeSlotsForDate(opts).length > 0;
 }
 
-// ============================================================================
-// Store
-// ============================================================================
-
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 const createInitialState = (): ReservationState => ({
@@ -241,10 +227,6 @@ const createInitialState = (): ReservationState => ({
 });
 
 export const store = map<ReservationState>(createInitialState());
-
-// ============================================================================
-// Internal Helpers
-// ============================================================================
 
 function getServiceDurations(): ServiceDuration[] {
   const state = store.get();
@@ -315,10 +297,6 @@ function computeSlots(dateStr: string): Slot[] {
   }));
 }
 
-// ============================================================================
-// Computed Values
-// ============================================================================
-
 export const currentStepName = computed(store, (state) => {
   if (!state.service) return "";
   if (!state.selectedSlot || !state.dateTimeConfirmed) return "datetime";
@@ -364,10 +342,6 @@ export const currentStep = computed(store, () => {
   return 1;
 });
 
-// ============================================================================
-// Actions
-// ============================================================================
-
 const formatDateDisplay = (ds: string | null): string => {
   if (!ds) return "";
   const d = new Date(ds);
@@ -398,7 +372,6 @@ export const actions = {
       const isMultiDayBlock = service?.blocks?.find((b: any) => b.key === "isMultiDay");
       const isMultiDay = isMultiDayBlock?.value?.[0] === true;
 
-      // Fetch full service data
       const fullService = await arky.reservation.getService({ id: service.id });
 
       store.set({
@@ -702,10 +675,6 @@ export const actions = {
   formatDateDisplay,
 };
 
-// ============================================================================
-// Persistence
-// ============================================================================
-
 export const cartParts = persistentAtom<Slot[]>("reservationCart", [], {
   encode: JSON.stringify,
   decode: JSON.parse,
@@ -734,7 +703,6 @@ cartParts.subscribe((cart) => {
 export function initReservationStore() {
   if (cartInitialized) return;
 
-  // Initialize tzGroups from SDK utilities
   if (arky?.utils?.tzGroups) {
     store.setKey("tzGroups", arky.utils.tzGroups);
   }

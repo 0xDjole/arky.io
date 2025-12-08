@@ -101,11 +101,11 @@ function formatLinePrice(item) {
 
 async function handleApplyPromoCode(code: string) {
     const candidate = (code || '').trim();
-    if (!candidate) return;
+    if (!candidate || !locationData) return;
 
     const prevPromo = appliedPromoCode;
     appliedPromoCode = candidate;
-    await actions.fetchQuote(candidate, orderBlocks);
+    await actions.fetchQuote(locationData, candidate);
 
     const err = $store.quoteError;
     if (!err) {
@@ -118,13 +118,15 @@ async function handleApplyPromoCode(code: string) {
 
 	function handleRemovePromoCode() {
 		appliedPromoCode = null;
-		refreshQuote();
+		if (locationData) {
+			actions.fetchQuote(locationData, null);
+		}
 		showToast('Promo code removed', 'success', 2000);
 	}
 
 	function refreshQuote() {
-		if ($cartItems.length > 0 && orderBlocks.length > 0) {
-			actions.fetchQuote(appliedPromoCode, orderBlocks);
+		if ($cartItems.length > 0 && locationData?.countryCode) {
+			actions.fetchQuote(locationData, appliedPromoCode);
 		}
 	}
 
@@ -142,7 +144,7 @@ async function handleApplyPromoCode(code: string) {
 		paymentError = null;
 
 		try {
-			const checkoutResponse = await actions.checkout(selectedPaymentMethod, orderBlocks, appliedPromoCode);
+			const checkoutResponse = await actions.checkout(selectedPaymentMethod, locationData, orderBlocks, appliedPromoCode);
 
 			if (!checkoutResponse.success) {
 				throw new Error(checkoutResponse.error || 'Failed to create order');

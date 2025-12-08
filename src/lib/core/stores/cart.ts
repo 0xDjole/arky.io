@@ -1,9 +1,7 @@
-// Unified cart store that manages both e-shop and reservation carts
 import { computed } from "nanostores";
 import { cartItems as eshopItems } from "./eshop";
 import { cartParts as reservationItems } from "./reservation";
 
-// Combined cart count
 export const totalCartItems = computed([eshopItems, reservationItems], (eshop, reservation) => {
     const eshopArr = Array.isArray(eshop) ? eshop : [];
     const reservationArr = Array.isArray(reservation) ? reservation : [];
@@ -12,7 +10,6 @@ export const totalCartItems = computed([eshopItems, reservationItems], (eshop, r
     return eshopCount + reservationCount;
 });
 
-// Cart state helpers
 export const hasEshopItems = computed(eshopItems, (items) => Array.isArray(items) && items.length > 0);
 export const hasReservationItems = computed(reservationItems, (items) => Array.isArray(items) && items.length > 0);
 export const isCartEmpty = computed([eshopItems, reservationItems], (eshop, reservation) => {
@@ -21,7 +18,6 @@ export const isCartEmpty = computed([eshopItems, reservationItems], (eshop, rese
     return eshopEmpty && reservationEmpty;
 });
 
-// Cart section visibility logic
 export const showEshopSection = computed([hasEshopItems, isCartEmpty], (hasEshop, isEmpty) => Boolean(hasEshop) || Boolean(isEmpty));
 export const showReservationSection = computed([hasReservationItems, isCartEmpty], (hasReservation, isEmpty) => Boolean(hasReservation) || Boolean(isEmpty));
 export const showBothSections = computed([hasEshopItems, hasReservationItems], (hasEshop, hasReservation) => Boolean(hasEshop) && Boolean(hasReservation));
