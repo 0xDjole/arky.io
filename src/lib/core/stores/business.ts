@@ -90,7 +90,6 @@ export const businessActions = {
 			businessStore.setKey("initialized", true);
 		} catch (error: any) {
 			businessStore.setKey("error", error.message);
-			console.error("Business store initialization failed:", error);
 		} finally {
 			businessStore.setKey("loading", false);
 		}

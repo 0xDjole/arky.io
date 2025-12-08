@@ -9,7 +9,7 @@ import {
 	orderBlocks,
 	businessActions,
 } from "./business";
-import type { EshopCartItem, EshopStoreState, Block, Price, Payment, Quote, Location } from "../types";
+import type { EshopCartItem, Block, Quote, Location } from "../types";
 import { onSuccess, onError } from "@lib/utils/notify";
 import { PaymentMethodType } from "../types";
 import { getLocale, getLocalizedString } from "@lib/i18n";
@@ -25,7 +25,6 @@ export const quoteAtom = deepMap<Quote | null>(null);
 
 export const store = deepMap({
 	selectedShippingMethodId: null,
-	shippingLocation: null,
 	userToken: null,
 	processingCheckout: false,
 	loading: false,
@@ -40,21 +39,14 @@ export const store = deepMap({
 
 export const cartTotal = computed([cartItems, selectedMarket, currency], (items, market, curr) => {
 	const subtotalMinor = (items || []).reduce((sum, item) => {
-		let amountMinor = 0;
-		if ("amount" in item.price) {
-			amountMinor = item.price.amount || 0;
-		}
+		const amountMinor = "amount" in item.price ? item.price.amount || 0 : 0;
 		return sum + amountMinor * item.quantity;
 	}, 0);
 
-	if (!market?.id || !curr) {
-		throw new Error("Market and currency must be configured");
-	}
-
 	return arky.utils.createPaymentForCheckout(
 		subtotalMinor,
-		market.id,
-		curr,
+		market?.id || "us",
+		curr || "USD",
 		PaymentMethodType.Cash,
 	);
 });
@@ -81,24 +73,6 @@ export const actions = {
 			updatedItems[existingItemIndex].quantity += quantity;
 			cartItems.set(updatedItems);
 		} else {
-			if (!variant.prices || !Array.isArray(variant.prices)) {
-				throw new Error("Product variant has no prices configured");
-			}
-
-			if (!market?.id) {
-				throw new Error("No market selected");
-			}
-
-			const marketAmount = arky.utils.getPriceAmount(variant.prices, market.id);
-			if (marketAmount === null || marketAmount === undefined) {
-				throw new Error(`No price configured for market: ${market.id}`);
-			}
-
-			const cartPrice: Price = {
-				amount: marketAmount,
-				market: market.id,
-			};
-
 			const newItem: EshopCartItem = {
 				id: crypto.randomUUID(),
 				productId: product.id,
@@ -109,44 +83,32 @@ export const actions = {
 					product.seo?.slug?.[Object.keys(product.seo?.slug || {})[0]] ||
 					product.id,
 				variantAttributes: variant.attributes || {},
-				price: cartPrice,
+				price: {
+					amount: arky.utils.getPriceAmount(variant.prices, market?.id || "us") || 0,
+					market: market?.id || "us",
+				},
 				quantity,
 				addedAt: Date.now(),
 			};
-
 			cartItems.set([...items, newItem]);
 		}
 	},
 
 	updateQuantity(itemId: string, newQuantity: number) {
 		const items = cartItems.get();
-		const updatedItems = items.map((item) =>
-			item.id === itemId ? { ...item, quantity: Math.max(1, newQuantity) } : item,
+		cartItems.set(
+			items.map((item) =>
+				item.id === itemId ? { ...item, quantity: Math.max(1, newQuantity) } : item,
+			),
 		);
-		cartItems.set(updatedItems);
 	},
 
 	removeItem(itemId: string) {
-		const items = cartItems.get();
-		const updatedItems = items.filter((item) => item.id !== itemId);
-		cartItems.set(updatedItems);
+		cartItems.set(cartItems.get().filter((item) => item.id !== itemId));
 	},
 
 	clearCart() {
 		cartItems.set([]);
-	},
-
-	prepareOrderItems() {
-		const items = cartItems.get();
-		return items.map((item) => ({
-			productId: item.productId,
-			variantId: item.variantId,
-			quantity: item.quantity,
-		}));
-	},
-
-	getOrderInfoBlocks(): Block[] {
-		return orderBlocks.get() || [];
 	},
 
 	async checkout(
@@ -164,44 +126,29 @@ export const actions = {
 			store.setKey("processingCheckout", true);
 			store.setKey("error", null);
 
-			const orderItems = this.prepareOrderItems();
-			const blocks = orderInfoBlocks || this.getOrderInfoBlocks();
-			const state = store.get();
-
-			const market = selectedMarket.get();
-			if (!market) {
-				throw new Error("No market selected");
-			}
-
-			if (!location?.countryCode) {
-				throw new Error("Location with country code is required for checkout");
-			}
-
 			const quote = quoteAtom.get();
 			const availableShippingMethods = quote?.shippingMethods || [];
 
-			if (!availableShippingMethods || availableShippingMethods.length === 0) {
-				throw new Error(`No shipping methods available. Please enter your address first.`);
+			if (!availableShippingMethods.length) {
+				throw new Error("No shipping methods available. Please enter your address first.");
 			}
 
-			const shippingMethodId = state.selectedShippingMethodId;
+			const state = store.get();
 			const shippingMethod =
-				availableShippingMethods.find((sm) => sm.id === shippingMethodId) ||
+				availableShippingMethods.find((sm) => sm.id === state.selectedShippingMethodId) ||
 				availableShippingMethods[0];
-
-			if (!shippingMethod) {
-				throw new Error("No shipping method available");
-			}
-
-			const promo = promoCode !== undefined ? promoCode : promoCodeAtom.get();
 
 			const response = await arky.eshop.checkout(
 				{
-					items: orderItems,
-					paymentMethod: paymentMethod,
-					blocks,
+					items: items.map((item) => ({
+						productId: item.productId,
+						variantId: item.variantId,
+						quantity: item.quantity,
+					})),
+					paymentMethod,
+					blocks: orderInfoBlocks || orderBlocks.get() || [],
 					shippingMethodId: shippingMethod.id,
-					promoCode: promo || undefined,
+					promoCode: (promoCode !== undefined ? promoCode : promoCodeAtom.get()) || undefined,
 					location,
 				},
 				{
@@ -219,10 +166,8 @@ export const actions = {
 				},
 			};
 		} catch (err: any) {
-			const errorMessage = `Checkout failed: ${err.message}`;
-			store.setKey("error", errorMessage);
-			console.error("Checkout error:", err);
-			return { success: false, error: errorMessage };
+			store.setKey("error", err.message);
+			return { success: false, error: err.message };
 		} finally {
 			store.setKey("processingCheckout", false);
 		}
@@ -230,10 +175,8 @@ export const actions = {
 
 	async addPhoneNumber(): Promise<boolean> {
 		try {
-			const phoneNumber = store.get().phoneNumber;
-
 			await arky.user.addPhoneNumber(
-				{ phoneNumber },
+				{ phoneNumber: store.get().phoneNumber },
 				{
 					onSuccess: onSuccess("Verification code sent successfully!"),
 					onError: onError("Failed to send verification code"),
@@ -242,7 +185,6 @@ export const actions = {
 			store.setKey("phoneError", null);
 			return true;
 		} catch (error: any) {
-			console.error("Phone update error:", error);
 			store.setKey("phoneError", error.message);
 			return false;
 		}
@@ -250,9 +192,7 @@ export const actions = {
 
 	async phoneNumberConfirm(): Promise<boolean> {
 		try {
-			const phoneNumber = store.get().phoneNumber;
-			const verificationCode = store.get().verificationCode;
-
+			const { phoneNumber, verificationCode } = store.get();
 			await arky.user.phoneNumberConfirm(
 				{ phoneNumber, code: verificationCode },
 				{
@@ -263,89 +203,16 @@ export const actions = {
 			store.setKey("verifyError", null);
 			return true;
 		} catch (error: any) {
-			console.error("Phone verification error:", error);
 			store.setKey("verifyError", error.message);
 			return false;
 		}
 	},
 
-	formatPrice(priceOrPayment: Price | Payment): string {
-		const currencyCode = currency.get();
-
-		if ("total" in (priceOrPayment as any)) {
-			return arky.utils.formatPayment(priceOrPayment as Payment, {
-				showSymbols: true,
-				decimalPlaces: 2,
-			});
-		}
-		return arky.utils.formatMinor((priceOrPayment as Price).amount || 0, currencyCode);
-	},
-
-	getCartPayment(): Payment {
-		const items = cartItems.get();
-		const market = selectedMarket.get();
-		const currencyCode = currency.get();
-
-		if (!market?.id || !currencyCode) {
-			throw new Error("Market and currency must be configured");
-		}
-
-		if (!items || items.length === 0) {
-			return arky.utils.createPaymentForCheckout(
-				0,
-				market.id,
-				currencyCode,
-				PaymentMethodType.Cash,
-			);
-		}
-
-		const subtotalMinor = items.reduce((sum, item) => {
-			let amountMinor = 0;
-			if ("amount" in item.price) {
-				amountMinor = item.price.amount || 0;
-			}
-			return sum + amountMinor * item.quantity;
-		}, 0);
-
-		return arky.utils.createPaymentForCheckout(
-			subtotalMinor,
-			market.id,
-			currencyCode,
-			PaymentMethodType.Cash,
-		);
-	},
-
-	getAvailablePaymentMethods(): string[] {
-		const methods = paymentMethods.get();
-		if (!methods || methods.length === 0) {
-			throw new Error("No payment methods configured for selected market");
-		}
-		return methods;
-	},
-
-	getShippingMethods() {
-		const quote = quoteAtom.get();
-		return quote?.shippingMethods || [];
-	},
-
-	getPaymentMethods() {
-		const quote = quoteAtom.get();
-		return quote?.paymentMethods || [];
-	},
-
 	async fetchQuote(location: Location, promoCode?: string | null): Promise<void> {
 		const items = cartItems.get();
-		const market = selectedMarket.get();
-		const state = store.get();
-		const promo = promoCode !== undefined ? promoCode : promoCodeAtom.get();
 
-		if (!items || items.length === 0) {
+		if (!items?.length) {
 			quoteAtom.set(null);
-			return;
-		}
-
-		if (!market) {
-			console.error("No market selected for quote");
 			return;
 		}
 
@@ -358,8 +225,6 @@ export const actions = {
 			store.setKey("fetchingQuote", true);
 			store.setKey("quoteError", null);
 
-			const shippingMethodId = state.selectedShippingMethodId || undefined;
-
 			const response = await arky.eshop.getQuote({
 				items: items.map((item) => ({
 					productId: item.productId,
@@ -367,20 +232,18 @@ export const actions = {
 					quantity: item.quantity,
 				})),
 				paymentMethod: PaymentMethodType.Cash,
-				shippingMethodId,
-				promoCode: promo || undefined,
+				shippingMethodId: store.get().selectedShippingMethodId || undefined,
+				promoCode: (promoCode !== undefined ? promoCode : promoCodeAtom.get()) || undefined,
 				location,
 			});
 
 			if (response) {
 				quoteAtom.set(response);
 			} else {
-				const friendly = mapQuoteError(response.code, response.error);
-				store.setKey("quoteError", friendly);
+				store.setKey("quoteError", mapQuoteError(response.code, response.error));
 				quoteAtom.set(null);
 			}
 		} catch (error: any) {
-			console.error("Quote fetch error:", error);
 			store.setKey("quoteError", error.message);
 			quoteAtom.set(null);
 		} finally {
