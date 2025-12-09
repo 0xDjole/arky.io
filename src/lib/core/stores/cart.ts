@@ -18,6 +18,6 @@ export const isCartEmpty = computed([eshopItems, reservationItems], (eshop, rese
     return eshopEmpty && reservationEmpty;
 });
 
-export const showEshopSection = computed([hasEshopItems, isCartEmpty], (hasEshop, isEmpty) => Boolean(hasEshop) || Boolean(isEmpty));
-export const showReservationSection = computed([hasReservationItems, isCartEmpty], (hasReservation, isEmpty) => Boolean(hasReservation) || Boolean(isEmpty));
-export const showBothSections = computed([hasEshopItems, hasReservationItems], (hasEshop, hasReservation) => Boolean(hasEshop) && Boolean(hasReservation));
+export const showEshopSection = computed([hasEshopItems, isCartEmpty], (hasEshop, isEmpty) => hasEshop || isEmpty);
+export const showReservationSection = computed([hasReservationItems, isCartEmpty], (hasReservation, isEmpty) => hasReservation || isEmpty);
+export const showBothSections = computed([hasEshopItems, hasReservationItems], (hasEshop, hasReservation) => hasEshop && hasReservation);

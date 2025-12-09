@@ -7,10 +7,12 @@
 	import QuantitySelector from '@lib/EShop/QuantitySelector/index.svelte';
 	import AttributeBlocks from '@lib/EShop/AttributeBlocks/index.svelte';
 	import DynamicForm from '@lib/DynamicForm/index.svelte';
+	import LocationInput from '@lib/DynamicForm/Location.svelte';
 	import Icon from '@iconify/svelte';
 	import PaymentForm from '@lib/shared/PaymentForm/index.svelte';
 	import QuoteSummary from '@lib/shared/QuoteSummary/index.svelte';
 	import PromoCode from '@lib/shared/PromoCode/index.svelte';
+	import type { Location } from '@lib/core/types';
 
 	let appliedPromoCode = $state<string | null>(null);
 
@@ -26,9 +28,7 @@
 	let paymentFormValid = $state(false);
 	let selectedShippingMethodId = $derived($store.selectedShippingMethodId);
 
-    const locationBlock = $derived(orderBlocks.find((b) => b.key === 'location' && b.type === 'GEO_LOCATION'));
-    const locationData = $derived(locationBlock?.value?.[0]);
-    const countryCode = $derived(locationData?.countryCode);
+	let locationData = $state<Location>({});
 
     // Check if all required location fields are filled
     const locationComplete = $derived(
@@ -60,7 +60,7 @@
 		paymentFormValid = isValid;
 	}
 
-	const isCompletelyValid = $derived(formValid && (selectedPaymentMethod === 'CASH' || paymentFormValid));
+	const isCompletelyValid = $derived(formValid && locationComplete && (selectedPaymentMethod === 'CASH' || paymentFormValid));
 
 	async function handlePhoneSendCode(blockId, phone) {
 		store.setKey('phoneNumber', phone);
@@ -212,13 +212,15 @@ async function handleApplyPromoCode(code: string) {
 	$effect(() => {
 		const blocks = $businessOrderBlocks;
 		if (blocks && blocks.length > 0 && orderBlocks.length === 0) {
-			orderBlocks = blocks.map(block => ({
-				...block,
-				value: block.value && block.value.length > 0 ? block.value :
-					(block.type === 'TEXT' ? [{ en: '' }] :
-					 block.type === 'BOOLEAN' ? [false] :
-					 block.type === 'NUMBER' ? [0] : [''])
-			}));
+			orderBlocks = blocks
+				.filter(block => block.type !== 'GEO_LOCATION')
+				.map(block => ({
+					...block,
+					value: block.value && block.value.length > 0 ? block.value :
+						(block.type === 'TEXT' ? [{ en: '' }] :
+						 block.type === 'BOOLEAN' ? [false] :
+						 block.type === 'NUMBER' ? [0] : [''])
+				}));
 		}
 	});
 
@@ -307,14 +309,21 @@ async function handleApplyPromoCode(code: string) {
 								const block = updatedBlocks[idx];
 								updatedBlocks[idx] = { ...block, value: Array.isArray(value) ? value : [value] };
 								orderBlocks = updatedBlocks;
-
-								if (block.key === 'location' && block.type === 'GEO_LOCATION') {
-									refreshQuote();
-								}
 							}}
 							onPhoneSendCode={handlePhoneSendCode}
 							onPhoneVerifyCode={handlePhoneVerifyCode}
 							onValidationChange={handleValidationChange}
+						/>
+
+						<LocationInput
+							value={locationData}
+							onUpdate={(location) => {
+								locationData = location;
+								if (location.countryCode) {
+									refreshQuote();
+								}
+							}}
+							required={true}
 						/>
 
 						{#if locationComplete && availableShippingMethods && availableShippingMethods.length > 0}
@@ -405,49 +414,6 @@ async function handleApplyPromoCode(code: string) {
 	@import "tailwindcss/theme" theme(reference);
 	@import "@/styles/tailwind-theme.css" theme(reference);
 
-	/* Loading and error states */
-	.loading-container {
-		@apply flex justify-center items-center py-8;
-	}
-
-	.loading-icon {
-		@apply w-8 h-8 animate-spin text-primary;
-	}
-
-	.error-container {
-		@apply bg-red-50 border border-red-200 rounded-lg p-4 text-center;
-	}
-
-	.error-title {
-		@apply text-red-600 text-lg mb-2;
-	}
-
-	.error-message {
-		@apply text-red-500 mb-4;
-	}
-
-	/* Empty cart state */
-	.empty-cart {
-		@apply bg-muted rounded-lg p-6 text-center;
-	}
-
-	.empty-cart-icon {
-		@apply text-muted-foreground bg-card mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full;
-	}
-
-	.empty-cart-text {
-		@apply text-muted-foreground mb-4;
-	}
-
-	.empty-cart-link {
-		@apply text-primary font-medium;
-	}
-
-	/* Cart items */
-	.cart-items {
-		@apply space-y-3;
-	}
-
 	.cart-item {
 		@apply bg-primary rounded-lg border p-4;
 	}
@@ -462,10 +428,6 @@ async function handleApplyPromoCode(code: string) {
 
 	.cart-item-title {
 		@apply font-medium text-primary-foreground text-base leading-tight;
-	}
-
-	.cart-item-price {
-		@apply mt-2 text-sm font-semibold text-primary-foreground;
 	}
 
 	.cart-item-actions {
@@ -488,7 +450,6 @@ async function handleApplyPromoCode(code: string) {
 		@apply flex-shrink-0;
 	}
 
-	/* Desktop layout */
 	@media (min-width: 768px) {
 		.cart-item-content {
 			@apply flex-row items-center justify-between;
@@ -509,165 +470,5 @@ async function handleApplyPromoCode(code: string) {
 
 	.remove-button {
 		@apply flex h-10 w-10 items-center justify-center rounded-full text-red-500 transition md:h-8 md:w-8;
-	}
-
-	/* Cart total */
-	.cart-total-section {
-		@apply border-t pt-4;
-	}
-
-	.cart-total-row {
-		@apply flex justify-between items-center mb-4;
-	}
-
-	.cart-total-label {
-		@apply text-xl font-semibold text-card-foreground;
-	}
-
-	.cart-total-amount {
-		@apply text-2xl font-bold text-primary;
-	}
-
-	/* Checkout section */
-	.checkout-section {
-		@apply border-t pt-6 mt-4;
-	}
-
-	.checkout-header {
-		@apply mb-6 flex items-center justify-between;
-	}
-
-	.checkout-title {
-		@apply text-xl font-semibold text-card-foreground;
-	}
-
-	.checkout-close {
-		@apply text-muted-foreground hover:text-card-foreground transition-colors p-2 md:p-0;
-	}
-
-	.checkout-form {
-		@apply space-y-6;
-	}
-
-	/* Form elements */
-	.form-group {
-		@apply space-y-2;
-	}
-
-	.form-label {
-		@apply block text-sm font-medium text-card-foreground;
-	}
-
-	.form-input {
-		@apply w-full p-4 bg-muted border-0 rounded-lg focus:bg-background transition-colors text-foreground placeholder-gray-500 text-base md:p-3 md:text-sm;
-	}
-
-	/* Payment methods */
-	.payment-methods {
-		@apply grid gap-3 grid-cols-1 md:grid-cols-2;
-	}
-
-	.payment-method {
-		@apply relative flex items-center p-4 rounded-lg cursor-pointer transition-all border-2;
-	}
-
-	.payment-method.selected {
-		@apply border-primary bg-primary shadow-sm;
-	}
-
-	.payment-method.unselected {
-		@apply border-transparent bg-muted hover:bg-muted;
-	}
-
-	.payment-method-check {
-		@apply absolute top-2 right-2;
-	}
-
-	.payment-method-content {
-		@apply flex items-center gap-3 w-full;
-	}
-
-	.payment-method-icon {
-		@apply flex items-center justify-center w-12 h-12 rounded-full bg-background;
-	}
-
-	.payment-method-text {
-		@apply text-left flex-1;
-	}
-
-	.payment-method-title {
-		@apply font-semibold;
-	}
-
-	.payment-method-subtitle {
-		@apply text-sm;
-	}
-
-	/* Credit card form */
-	.card-details {
-		@apply bg-muted rounded-lg border p-6;
-	}
-
-	.card-details-header {
-		@apply flex items-center gap-2 mb-4;
-	}
-
-	.card-details-title {
-		@apply font-medium text-card-foreground;
-	}
-
-	.card-form {
-		@apply space-y-4;
-	}
-
-	.card-input-group {
-		@apply grid grid-cols-1 gap-4 md:grid-cols-2;
-	}
-
-	.card-input {
-		@apply p-4 border border-border rounded-lg min-h-[56px] md:p-3 md:min-h-[48px];
-		background-color: var(--bg-background);
-		color: var(--text-foreground);
-	}
-
-	.security-notice {
-		@apply flex items-center gap-2 text-sm text-muted-foreground;
-	}
-
-	/* Error message */
-	.error-box {
-		@apply p-4 bg-destructive/10 border border-destructive/20 rounded-lg;
-	}
-
-	.error-header {
-		@apply flex items-center gap-2 text-destructive;
-	}
-
-	.error-content {
-		@apply text-destructive/80 mt-1;
-	}
-
-	/* Action buttons */
-	.action-buttons {
-		@apply flex flex-col gap-3 pt-4 md:flex-row;
-	}
-
-	.cancel-button {
-		@apply w-full px-4 py-3 text-base bg-muted text-muted-foreground rounded-lg hover:bg-accent hover:text-foreground transition-colors md:flex-1 md:py-2 md:text-sm;
-	}
-
-	.submit-button {
-		@apply w-full px-4 py-3 text-base bg-primary text-primary-foreground rounded-lg hover:bg-primary font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 md:flex-2 md:py-2 md:text-sm;
-	}
-
-	/* Mobile adjustments */
-	@media (max-width: 768px) {
-		.payment-methods {
-			@apply grid-cols-1;
-		}
-
-		.card-input-group {
-			@apply grid-cols-1;
-		}
 	}
 </style>
