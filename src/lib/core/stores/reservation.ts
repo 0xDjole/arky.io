@@ -482,12 +482,13 @@ export const actions = {
     const state = store.get();
     if (!state.startDate || !state.endDate) return;
 
-    const startDT = new Date(state.startDate);
-    startDT.setHours(9, 0, 0, 0);
-    const endDT = new Date(state.endDate);
-    endDT.setHours(17, 0, 0, 0);
-    const from = Math.floor(startDT.getTime() / 1000);
-    const to = Math.floor(endDT.getTime() / 1000);
+    const [startYear, startMonth, startDay] = state.startDate.split("-").map(Number);
+    const [endYear, endMonth, endDay] = state.endDate.split("-").map(Number);
+    const tz = state.timezone;
+
+    // Full day booking: midnight start day to midnight after end day (24/7 schedule)
+    const from = toUtcTimestamp(startYear, startMonth, startDay, 0, tz);
+    const to = toUtcTimestamp(endYear, endMonth, endDay + 1, 0, tz);
     const providerId = state.selectedProvider?.id || state.providers[0]?.id || "";
 
     const slot: Slot = {
@@ -496,7 +497,7 @@ export const actions = {
       providerId,
       from,
       to,
-      timeText: "9:00 AM - 5:00 PM daily",
+      timeText: "Full day",
       dateText: `${state.startDate} to ${state.endDate}`,
       isMultiDay: true,
     };
