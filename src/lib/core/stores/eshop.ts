@@ -7,6 +7,7 @@ import {
 	paymentMethods,
 	paymentConfig,
 	orderBlocks,
+	orderConfigs,
 	businessActions,
 } from "./business";
 import type { EshopCartItem, Block, Quote, Location } from "../types";
@@ -55,7 +56,7 @@ export const cartItemCount = computed(cartItems, (items) => {
 	return items.reduce((sum, item) => sum + item.quantity, 0);
 });
 
-export { currency, paymentConfig, orderBlocks };
+export { currency, paymentConfig, orderBlocks, orderConfigs };
 
 export const allowedPaymentMethods = paymentMethods;
 
@@ -115,7 +116,8 @@ export const actions = {
 		paymentMethod: string = PaymentMethodType.Cash,
 		location: Location,
 		orderInfoBlocks?: Block[],
-		promoCode?: string | null,
+		email?: string,
+		phone?: string,
 	) {
 		const items = cartItems.get();
 		if (!items.length) {
@@ -138,6 +140,9 @@ export const actions = {
 				availableShippingMethods.find((sm) => sm.id === state.selectedShippingMethodId) ||
 				availableShippingMethods[0];
 
+			// Get promo code ID from quote response (validated during quote)
+			const promoCodeId = quote?.payment?.promoCode?.id || undefined;
+
 			const response = await arky.eshop.checkout(
 				{
 					items: items.map((item) => ({
@@ -148,8 +153,10 @@ export const actions = {
 					paymentMethod,
 					blocks: orderInfoBlocks || orderBlocks.get() || [],
 					shippingMethodId: shippingMethod.id,
-					promoCode: (promoCode !== undefined ? promoCode : promoCodeAtom.get()) || undefined,
-					location,
+					promoCodeId,
+					address: location,
+					email: email || undefined,
+					phone: phone || undefined,
 				},
 				{
 					onSuccess: onSuccess("Order placed successfully!"),

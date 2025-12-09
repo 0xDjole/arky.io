@@ -2,7 +2,7 @@
 	import Icon from '@iconify/svelte';
 	import DynamicForm from '@lib/DynamicForm/index.svelte';
 	import { store, actions, initReservationStore, cartParts } from '@lib/core/stores/reservation';
-	import { reservationBlocks, paymentMethods, paymentConfig, currency } from '@lib/core/stores/business';
+	import { reservationBlocks, reservationConfigs, paymentMethods, paymentConfig, currency } from '@lib/core/stores/business';
 	import { onMount } from 'svelte';
 	import { t } from '../../../lib/i18n/index';
 	import { showToast } from '@lib/toast.js';
@@ -19,6 +19,21 @@
 	let formErrors = $state([]);
 	let paymentFormValid = $state(false);
 	let localReservationBlocks = $state([]);
+	let email = $state('');
+	let phone = $state('');
+
+	const emailValid = $derived(() => {
+		if (!$reservationConfigs?.isEmailRequired) return true;
+		if (!email) return false;
+		return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+	});
+
+	const phoneValid = $derived(() => {
+		if (!$reservationConfigs?.isPhoneRequired) return true;
+		return phone.length >= 6;
+	});
+
+	const isCompletelyValid = $derived(formValid && emailValid() && phoneValid() && (selectedPaymentMethod === 'CASH' || selectedPaymentMethod === 'FREE' || paymentFormValid));
 
 	onMount(() => {
 		initReservationStore();
@@ -98,14 +113,16 @@ async function handleApplyPromoCode(code: string) {
 
 	async function handleCheckout() {
 		// Block submission if form is invalid
-		if (!formValid) {
-			showToast('Please fix the form errors before submitting', 'error', 4000);
-			return;
-		}
-
-		// Block submission if payment form is invalid (only for credit card)
-		if (selectedPaymentMethod === 'CREDIT_CARD' && !paymentFormValid) {
-			showToast('Please complete payment information before submitting', 'error', 4000);
+		if (!isCompletelyValid) {
+			if (!formValid) {
+				showToast('Please fix the form errors before submitting', 'error', 4000);
+			} else if (!emailValid()) {
+				showToast('Please enter a valid email address', 'error', 4000);
+			} else if (!phoneValid()) {
+				showToast('Please enter a valid phone number', 'error', 4000);
+			} else if (selectedPaymentMethod === 'CREDIT_CARD' && !paymentFormValid) {
+				showToast('Please complete payment information before submitting', 'error', 4000);
+			}
 			return;
 		}
 
@@ -113,7 +130,7 @@ async function handleApplyPromoCode(code: string) {
 		paymentError = null;
 
 		try {
-			const checkoutResponse = await actions.checkout(selectedPaymentMethod, localReservationBlocks, appliedPromoCode);
+			const checkoutResponse = await actions.checkout(selectedPaymentMethod, localReservationBlocks, email || undefined, phone || undefined);
 
 			if (!checkoutResponse.success) {
 				throw new Error(checkoutResponse.error || 'Failed to create reservation');
@@ -173,6 +190,39 @@ async function handleApplyPromoCode(code: string) {
 
 <div class="bg-tertiary mx-auto mt-20 max-w-xl space-y-4 rounded-xl p-4 shadow-lg">
 	<h2 class="text-2xl font-bold text-primary">{t('cart.title')}</h2>
+
+	<!-- Email and Phone Fields -->
+	<div class="space-y-4">
+		{#if $reservationConfigs?.isEmailRequired !== false}
+			<div>
+				<label class="block text-sm font-medium text-primary mb-1.5">
+					Email {#if $reservationConfigs?.isEmailRequired}<span class="text-red-500">*</span>{/if}
+				</label>
+				<input
+					type="email"
+					class="w-full px-4 py-3 rounded-lg border bg-secondary text-primary focus:outline-none focus:ring-2 focus:ring-primary"
+					placeholder="your@email.com"
+					bind:value={email}
+					required={$reservationConfigs?.isEmailRequired}
+				/>
+			</div>
+		{/if}
+
+		{#if $reservationConfigs?.isPhoneRequired !== false || $reservationConfigs?.isPhoneRequired}
+			<div>
+				<label class="block text-sm font-medium text-primary mb-1.5">
+					Phone {#if $reservationConfigs?.isPhoneRequired}<span class="text-red-500">*</span>{/if}
+				</label>
+				<input
+					type="tel"
+					class="w-full px-4 py-3 rounded-lg border bg-secondary text-primary focus:outline-none focus:ring-2 focus:ring-primary"
+					placeholder="+1 234 567 8900"
+					bind:value={phone}
+					required={$reservationConfigs?.isPhoneRequired}
+				/>
+			</div>
+		{/if}
+	</div>
 
 	{#if localReservationBlocks?.length > 0}
 		<DynamicForm
@@ -271,7 +321,7 @@ async function handleApplyPromoCode(code: string) {
 
 		<button
 			class="bg-primary-600 hover:bg-primary-500 mt-4 flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3 text-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-			disabled={$store?.loading || paymentProcessing || !formValid || (selectedPaymentMethod === 'CREDIT_CARD' && (!paymentFormValid || !confirmPayment))}
+			disabled={$store?.loading || paymentProcessing || !isCompletelyValid || (selectedPaymentMethod === 'CREDIT_CARD' && !confirmPayment)}
 			onclick={handleCheckout}>
 			{#if !$store?.loading && !paymentProcessing}
 				<Icon icon={selectedPaymentMethod === 'CREDIT_CARD' ? 'mdi:credit-card' : (selectedPaymentMethod === 'FREE' ? 'mdi:send' : 'mdi:check-circle')} class="h-5 w-5" />

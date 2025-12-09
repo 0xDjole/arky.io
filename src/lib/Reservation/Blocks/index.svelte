@@ -5,7 +5,7 @@
 	// Get localized content
 	function getLocalizedContent(content) {
 		if (!content) return '';
-		// If content is a string (PHONE_NUMBER, EMAIL, URL blocks), return it directly
+		// If content is a string (URL blocks), return it directly
 		if (typeof content === 'string') return content;
 		// If content is an object with locales (TEXT blocks)
 		if (content[locale]) return content[locale];
@@ -80,16 +80,6 @@
 			{:else}
 				<p style={getStyleString(block)}>{content}</p>
 			{/if}
-		{:else if block.type === 'PHONE_NUMBER'}
-			{@const phoneValue = block.value?.[0] || ''}
-			<a href="tel:{phoneValue}" class="text-blue-500 hover:text-blue-700 underline" style={getStyleString(block)}>
-				{phoneValue}
-			</a>
-		{:else if block.type === 'EMAIL'}
-			{@const emailValue = block.value?.[0] || ''}
-			<a href="mailto:{emailValue}" class="text-blue-500 hover:text-blue-700 underline" style={getStyleString(block)}>
-				{emailValue}
-			</a>
 		{:else if (block.type === 'RELATIONSHIP_MEDIA' || block.type === 'RELATIONSHIP') && block.value?.[0]?.mimeType}
 			{@const mediaValue = block.value[0]}
 			{@const imageUrl = getImageUrl(mediaValue, false)}

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount, } from 'svelte';
 	import { showToast } from '@lib/toast.js';
-	import { cartItems,  cartItemCount, store, actions, initEshopStore, currency, allowedPaymentMethods, orderBlocks as businessOrderBlocks, paymentConfig, quoteAtom } from '@lib/core/stores/eshop';
+	import { cartItems,  cartItemCount, store, actions, initEshopStore, currency, allowedPaymentMethods, orderBlocks as businessOrderBlocks, orderConfigs, paymentConfig, quoteAtom } from '@lib/core/stores/eshop';
 	import { selectedMarket } from '@lib/core/stores/business';
 	import { arky } from '@lib/index';
 	import QuantitySelector from '@lib/EShop/QuantitySelector/index.svelte';
@@ -29,6 +29,21 @@
 	let selectedShippingMethodId = $derived($store.selectedShippingMethodId);
 
 	let locationData = $state<Location>({});
+	let email = $state('');
+	let phone = $state('');
+	let emailError = $state<string | null>(null);
+	let phoneError = $state<string | null>(null);
+
+	const emailValid = $derived(() => {
+		if (!$orderConfigs?.isEmailRequired) return true;
+		if (!email) return false;
+		return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+	});
+
+	const phoneValid = $derived(() => {
+		if (!$orderConfigs?.isPhoneRequired) return true;
+		return phone.length >= 6;
+	});
 
     // Check if all required location fields are filled
     const locationComplete = $derived(
@@ -60,7 +75,7 @@
 		paymentFormValid = isValid;
 	}
 
-	const isCompletelyValid = $derived(formValid && locationComplete && (selectedPaymentMethod === 'CASH' || paymentFormValid));
+	const isCompletelyValid = $derived(formValid && locationComplete && emailValid() && phoneValid() && (selectedPaymentMethod === 'CASH' || paymentFormValid));
 
 	async function handlePhoneSendCode(blockId, phone) {
 		store.setKey('phoneNumber', phone);
@@ -134,6 +149,10 @@ async function handleApplyPromoCode(code: string) {
 		if (!isCompletelyValid) {
 			if (!formValid) {
 				showToast('Please fix the form errors before placing order', 'error', 4000);
+			} else if (!emailValid()) {
+				showToast('Please enter a valid email address', 'error', 4000);
+			} else if (!phoneValid()) {
+				showToast('Please enter a valid phone number', 'error', 4000);
 			} else if (selectedPaymentMethod === 'CREDIT_CARD' && !paymentFormValid) {
 				showToast('Please complete payment information before placing order', 'error', 4000);
 			}
@@ -144,7 +163,7 @@ async function handleApplyPromoCode(code: string) {
 		paymentError = null;
 
 		try {
-			const checkoutResponse = await actions.checkout(selectedPaymentMethod, locationData, orderBlocks, appliedPromoCode);
+			const checkoutResponse = await actions.checkout(selectedPaymentMethod, locationData, orderBlocks, email || undefined, phone || undefined);
 
 			if (!checkoutResponse.success) {
 				throw new Error(checkoutResponse.error || 'Failed to create order');
@@ -302,6 +321,45 @@ async function handleApplyPromoCode(code: string) {
 			<form on:submit|preventDefault={() => {
 				handleCheckoutComplete();
 			}} class="space-y-6">
+						<!-- Email and Phone Fields -->
+						<div class="space-y-4">
+							{#if $orderConfigs?.isEmailRequired !== false}
+								<div>
+									<label class="block text-sm font-medium text-foreground mb-1.5">
+										Email {#if $orderConfigs?.isEmailRequired}<span class="text-destructive">*</span>{/if}
+									</label>
+									<input
+										type="email"
+										class="w-full px-4 py-3 rounded-lg border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+										placeholder="your@email.com"
+										bind:value={email}
+										required={$orderConfigs?.isEmailRequired}
+									/>
+									{#if emailError}
+										<p class="text-destructive text-sm mt-1">{emailError}</p>
+									{/if}
+								</div>
+							{/if}
+
+							{#if $orderConfigs?.isPhoneRequired !== false || $orderConfigs?.isPhoneRequired}
+								<div>
+									<label class="block text-sm font-medium text-foreground mb-1.5">
+										Phone {#if $orderConfigs?.isPhoneRequired}<span class="text-destructive">*</span>{/if}
+									</label>
+									<input
+										type="tel"
+										class="w-full px-4 py-3 rounded-lg border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+										placeholder="+1 234 567 8900"
+										bind:value={phone}
+										required={$orderConfigs?.isPhoneRequired}
+									/>
+									{#if phoneError}
+										<p class="text-destructive text-sm mt-1">{phoneError}</p>
+									{/if}
+								</div>
+							{/if}
+						</div>
+
 						<DynamicForm
 							blocks={orderBlocks}
 							onUpdate={(idx, value) => {

@@ -562,12 +562,15 @@ export const actions = {
     store.setKey("cart", []);
   },
 
-  async checkout(paymentMethod?: string, blocks?: any[], promoCode?: string) {
+  async checkout(paymentMethod?: string, blocks?: any[], email?: string, phone?: string) {
     const state = store.get();
     if (!state.cart.length) return { success: false, error: "Cart is empty" };
     store.setKey("loading", true);
 
     try {
+      // Get promo code ID from quote response (validated during quote)
+      const promoCodeId = state.quote?.payment?.promoCode?.id || undefined;
+
       const result = await arky.reservation.checkout({
         items: state.cart.map((s) => ({
           serviceId: s.serviceId,
@@ -577,8 +580,10 @@ export const actions = {
           blocks: s.serviceBlocks || [],
         })),
         paymentMethod,
-        promoCode: promoCode ?? undefined,
+        promoCodeId,
         blocks: blocks || [],
+        email: email || undefined,
+        phone: phone || undefined,
       });
       return { success: true, data: result };
     } catch (e: any) {

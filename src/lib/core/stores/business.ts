@@ -73,6 +73,14 @@ export const reservationBlocks = computed(businessStore, (state) => {
 	return state.data?.configs?.reservationBlocks || [];
 });
 
+export const orderConfigs = computed(businessStore, (state) => {
+	return state.data?.configs?.orderConfigs || { isEmailRequired: true, isPhoneRequired: false };
+});
+
+export const reservationConfigs = computed(businessStore, (state) => {
+	return state.data?.configs?.reservationConfigs || { isEmailRequired: true, isPhoneRequired: true };
+});
+
 export const businessActions = {
 	async init(): Promise<void> {
 		const state = businessStore.get();

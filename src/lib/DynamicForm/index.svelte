@@ -74,12 +74,7 @@
 	}
 
 	function updateBlockValue(idx: number, value: string) {
-		const block = blocks[idx];
-		if (block.type === 'PHONE_NUMBER' || block.type === 'EMAIL') {
-			update(idx, value);
-		} else {
-			update(idx, { en: value });
-		}
+		update(idx, { en: value });
 	}
 
 	function isFieldRequired(block: any): boolean {
@@ -107,12 +102,6 @@
 
 		if (isFieldRequired(block) && !trimmedValue) {
 			return 'This field is required';
-		}
-
-		if (block.type === 'PHONE_NUMBER' && trimmedValue) {
-			if (!phoneVerified[block.id]) {
-				return 'Please verify your phone number';
-			}
 		}
 
 		if (trimmedValue && !validatePattern(block, trimmedValue)) {
@@ -153,30 +142,7 @@
 				</label>
 			{/if}
 
-			{#if block.type === 'PHONE_NUMBER'}
-				<PhoneInput
-					blockId={block.id}
-					value={getBlockValue(block)}
-					onChange={(value) => updateBlockValue(idx, value)}
-					onSendCode={onPhoneSendCode}
-					onVerifyCode={onPhoneVerifyCode}
-					onValidationChange={(isVerified) => handlePhoneValidation(block.id, isVerified)}
-				/>
-			{:else if block.type === 'EMAIL'}
-				<TextInput
-					value={getBlockValue(block)}
-					placeholder={block.properties?.placeholder || 'Email'}
-					required={isFieldRequired(block)}
-					onChange={(value) => updateBlockValue(idx, value)}
-					onBlur={() => validateAllFields()}
-				/>
-				{#if getValidationError(block, getBlockValue(block))}
-					<div class="mt-1 text-xs text-error font-medium">
-						<Icon icon="mdi:alert-circle" class="w-3 h-3 inline mr-1" />
-						{getValidationError(block, getBlockValue(block))}
-					</div>
-				{/if}
-			{:else if block.type === 'TEXT_NOTE'}
+			{#if block.type === 'TEXT_NOTE'}
 				<TextAreaInput
 					value={getBlockValue(block)}
 					placeholder={block.properties?.placeholder || ''}
