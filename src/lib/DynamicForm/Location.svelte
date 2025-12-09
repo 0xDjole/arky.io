@@ -104,13 +104,11 @@
 
 	<select
 		class="w-full p-3 bg-muted border-0 rounded-lg focus:bg-background transition-colors text-foreground text-base"
-		value={value.countryCode || ''}
+		value={value.country || ''}
 		onchange={(e) => {
 			const countryIso = e.currentTarget.value;
-			const countryObj = ALL_COUNTRIES.find(c => c.iso === countryIso);
 			update({
-				country: countryObj?.name || null,
-				countryCode: countryIso,
+				country: countryIso,
 				state: null,
 				city: null
 			});
@@ -122,8 +120,8 @@
 		{/each}
 	</select>
 
-	{#if value.countryCode}
-		{@const availableStates = getAvailableStates(value.countryCode)}
+	{#if value.country}
+		{@const availableStates = getAvailableStates(value.country)}
 
 		{#if availableStates.length > 0}
 			<select
@@ -174,7 +172,7 @@
 	{/if}
 </div>
 
-{#if required && !value.countryCode}
+{#if required && !value.country}
 	<div class="mt-1 text-xs text-error font-medium">
 		<Icon icon="mdi:alert-circle" class="w-3 h-3 inline mr-1" />
 		Country is required.

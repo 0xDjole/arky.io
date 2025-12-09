@@ -223,8 +223,8 @@ export const actions = {
 			return;
 		}
 
-		if (!location?.countryCode) {
-			store.setKey("quoteError", "Location with country code is required for quote");
+		if (!location?.country) {
+			store.setKey("quoteError", "Location with country is required for quote");
 			return;
 		}
 

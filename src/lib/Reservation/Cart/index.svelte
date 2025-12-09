@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Icon from '@iconify/svelte';
 	import DynamicForm from '@lib/DynamicForm/index.svelte';
+	import PhoneInput from '@lib/shared/PhoneInput/index.svelte';
 	import { store, actions, initReservationStore, cartParts } from '@lib/core/stores/reservation';
 	import { reservationBlocks, reservationConfigs, paymentMethods, paymentConfig, currency } from '@lib/core/stores/business';
 	import { onMount } from 'svelte';
@@ -15,12 +16,13 @@
 	let paymentProcessing = $state(false);
 	let paymentError = $state(null);
 	let confirmPayment = null;
-	let formValid = $state(false);
+	let formValid = $state(true);
 	let formErrors = $state([]);
 	let paymentFormValid = $state(false);
 	let localReservationBlocks = $state([]);
 	let email = $state('');
 	let phone = $state('');
+	let phoneVerified = $state(false);
 
 	const emailValid = $derived(() => {
 		if (!$reservationConfigs?.isEmailRequired) return true;
@@ -30,7 +32,8 @@
 
 	const phoneValid = $derived(() => {
 		if (!$reservationConfigs?.isPhoneRequired) return true;
-		return phone.length >= 6;
+		if (!phone || phone.length < 6) return false;
+		return phoneVerified;
 	});
 
 	const isCompletelyValid = $derived(formValid && emailValid() && phoneValid() && (selectedPaymentMethod === 'CASH' || selectedPaymentMethod === 'FREE' || paymentFormValid));
@@ -119,7 +122,7 @@ async function handleApplyPromoCode(code: string) {
 			} else if (!emailValid()) {
 				showToast('Please enter a valid email address', 'error', 4000);
 			} else if (!phoneValid()) {
-				showToast('Please enter a valid phone number', 'error', 4000);
+				showToast('Please verify your phone number', 'error', 4000);
 			} else if (selectedPaymentMethod === 'CREDIT_CARD' && !paymentFormValid) {
 				showToast('Please complete payment information before submitting', 'error', 4000);
 			}
@@ -208,19 +211,15 @@ async function handleApplyPromoCode(code: string) {
 			</div>
 		{/if}
 
-		{#if $reservationConfigs?.isPhoneRequired !== false || $reservationConfigs?.isPhoneRequired}
-			<div>
-				<label class="block text-sm font-medium text-primary mb-1.5">
-					Phone {#if $reservationConfigs?.isPhoneRequired}<span class="text-red-500">*</span>{/if}
-				</label>
-				<input
-					type="tel"
-					class="w-full px-4 py-3 rounded-lg border bg-secondary text-primary focus:outline-none focus:ring-2 focus:ring-primary"
-					placeholder="+1 234 567 8900"
-					bind:value={phone}
-					required={$reservationConfigs?.isPhoneRequired}
-				/>
-			</div>
+		{#if $reservationConfigs?.isPhoneRequired}
+			<PhoneInput
+				blockId="cart-phone"
+				value={phone}
+				onChange={(value) => phone = value}
+				onSendCode={handlePhoneSendCode}
+				onVerifyCode={handlePhoneVerifyCode}
+				onValidationChange={(isVerified) => phoneVerified = isVerified}
+			/>
 		{/if}
 	</div>
 

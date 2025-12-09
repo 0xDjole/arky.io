@@ -7,6 +7,7 @@
 	import QuantitySelector from '@lib/EShop/QuantitySelector/index.svelte';
 	import AttributeBlocks from '@lib/EShop/AttributeBlocks/index.svelte';
 	import DynamicForm from '@lib/DynamicForm/index.svelte';
+	import PhoneInput from '@lib/shared/PhoneInput/index.svelte';
 	import LocationInput from '@lib/DynamicForm/Location.svelte';
 	import Icon from '@iconify/svelte';
 	import PaymentForm from '@lib/shared/PaymentForm/index.svelte';
@@ -23,7 +24,7 @@
 	let paymentError = $state(null);
 	let orderBlocks = $state([]);
 	let confirmPayment = null;
-	let formValid = $state(false);
+	let formValid = $state(true);
 	let formErrors = $state([]);
 	let paymentFormValid = $state(false);
 	let selectedShippingMethodId = $derived($store.selectedShippingMethodId);
@@ -31,6 +32,7 @@
 	let locationData = $state<Location>({});
 	let email = $state('');
 	let phone = $state('');
+	let phoneVerified = $state(false);
 	let emailError = $state<string | null>(null);
 	let phoneError = $state<string | null>(null);
 
@@ -42,12 +44,13 @@
 
 	const phoneValid = $derived(() => {
 		if (!$orderConfigs?.isPhoneRequired) return true;
-		return phone.length >= 6;
+		if (!phone || phone.length < 6) return false;
+		return phoneVerified;
 	});
 
     // Check if all required location fields are filled
     const locationComplete = $derived(
-        locationData?.countryCode &&
+        locationData?.country &&
         locationData?.city &&
         locationData?.postalCode &&
         locationData?.address
@@ -140,7 +143,7 @@ async function handleApplyPromoCode(code: string) {
 	}
 
 	function refreshQuote() {
-		if ($cartItems.length > 0 && locationData?.countryCode) {
+		if ($cartItems.length > 0 && locationData?.country) {
 			actions.fetchQuote(locationData, appliedPromoCode);
 		}
 	}
@@ -152,7 +155,7 @@ async function handleApplyPromoCode(code: string) {
 			} else if (!emailValid()) {
 				showToast('Please enter a valid email address', 'error', 4000);
 			} else if (!phoneValid()) {
-				showToast('Please enter a valid phone number', 'error', 4000);
+				showToast('Please verify your phone number', 'error', 4000);
 			} else if (selectedPaymentMethod === 'CREDIT_CARD' && !paymentFormValid) {
 				showToast('Please complete payment information before placing order', 'error', 4000);
 			}
@@ -341,22 +344,15 @@ async function handleApplyPromoCode(code: string) {
 								</div>
 							{/if}
 
-							{#if $orderConfigs?.isPhoneRequired !== false || $orderConfigs?.isPhoneRequired}
-								<div>
-									<label class="block text-sm font-medium text-foreground mb-1.5">
-										Phone {#if $orderConfigs?.isPhoneRequired}<span class="text-destructive">*</span>{/if}
-									</label>
-									<input
-										type="tel"
-										class="w-full px-4 py-3 rounded-lg border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-										placeholder="+1 234 567 8900"
-										bind:value={phone}
-										required={$orderConfigs?.isPhoneRequired}
-									/>
-									{#if phoneError}
-										<p class="text-destructive text-sm mt-1">{phoneError}</p>
-									{/if}
-								</div>
+							{#if $orderConfigs?.isPhoneRequired}
+								<PhoneInput
+									blockId="eshop-cart-phone"
+									value={phone}
+									onChange={(value) => phone = value}
+									onSendCode={handlePhoneSendCode}
+									onVerifyCode={handlePhoneVerifyCode}
+									onValidationChange={(isVerified) => phoneVerified = isVerified}
+								/>
 							{/if}
 						</div>
 
@@ -377,7 +373,7 @@ async function handleApplyPromoCode(code: string) {
 							value={locationData}
 							onUpdate={(location) => {
 								locationData = location;
-								if (location.countryCode) {
+								if (location.country) {
 									refreshQuote();
 								}
 							}}
