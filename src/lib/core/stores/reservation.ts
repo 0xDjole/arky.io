@@ -569,7 +569,6 @@ export const actions = {
     store.setKey("loading", true);
 
     try {
-      // Get promo code ID from quote response (validated during quote)
       const promoCodeId = state.quote?.payment?.promoCode?.id || undefined;
 
       const result = await arky.reservation.checkout({
@@ -601,7 +600,12 @@ export const actions = {
     store.setKey("quoteError", null);
     try {
       const quote = await arky.reservation.getQuote({
-        items: state.cart.map(s => ({ serviceId: s.serviceId })),
+        items: state.cart.map(s => ({
+          serviceId: s.serviceId,
+          from: s.from,
+          to: s.to,
+          providerId: s.providerId,
+        })),
         paymentMethod: paymentMethod || "CASH",
         promoCode,
       });
@@ -650,8 +654,15 @@ export const actions = {
 
   getServicePrice(): string {
     const state = store.get();
+
+    // Use quote total if available (authoritative price from quote engine)
+    if (state.quote?.total !== undefined) {
+      return String(state.quote.total);
+    }
+
+    // Fallback to base price display before quote is fetched
     if (!state.service?.prices) return "";
-    return arky.utils.getMarketPrice(state.service.prices, "us") || "";
+    return arky.utils.getMarketPrice(state.service.prices, "us") || "0";
   },
 
   async addPhoneNumber() {

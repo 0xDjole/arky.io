@@ -1,10 +1,10 @@
 <script lang="ts">
 	import Icon from '@iconify/svelte';
 	import { arky } from '@lib/index';
-	import type { Quote } from '@lib/core/types';
+	import type { EshopQuote, ReservationQuote } from '@lib/core/types';
 
 	interface Props {
-		quote: Quote | null;
+		quote: EshopQuote | ReservationQuote | null;
 		fetchingQuote: boolean;
 		quoteError: string | null;
 		currency: string;
@@ -50,13 +50,13 @@
 				<span class="font-medium">{arky.utils.formatMinor(quote.subtotal, currency)}</span>
 			</div>
 
-			{#if showShipping && quote.shippingMethod}
+			{#if showShipping && 'shippingMethod' in quote && quote.shippingMethod}
 				<div class="flex justify-between text-sm text-card-foreground">
 					<span>Shipping ({quote.shippingMethod.name?.en || quote.shippingMethod.name?.[Object.keys(quote.shippingMethod.name || {})[0]] || quote.shippingMethod.id}):</span>
 					<span class="font-medium">
-						{#if quote.shipping === 0}
+						{#if 'shipping' in quote && quote.shipping === 0}
 							<span class="text-green-600 font-semibold">FREE</span>
-						{:else}
+						{:else if 'shipping' in quote}
 							{arky.utils.formatMinor(quote.shipping, currency)}
 						{/if}
 					</span>

@@ -53,6 +53,10 @@ export const paymentMethods = computed(selectedMarket, (market) => {
 	return Array.from(allMethodTypes);
 });
 
+export const reservationPaymentMethods = computed(selectedMarket, (market) => {
+	return market?.reservationPaymentMethods || [];
+});
+
 export const paymentConfig = computed(businessStore, (state) => {
 	if (!state.data?.configs) return { provider: null, enabled: false };
 
