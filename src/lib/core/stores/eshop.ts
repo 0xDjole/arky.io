@@ -113,8 +113,8 @@ export const actions = {
 	},
 
 	async checkout(
-		paymentMethod: string = PaymentMethodType.Cash,
-		location: Location,
+		paymentMethodId?: string,
+		location?: Location,
 		orderInfoBlocks?: Block[],
 		email?: string,
 		phone?: string,
@@ -150,7 +150,7 @@ export const actions = {
 						variantId: item.variantId,
 						quantity: item.quantity,
 					})),
-					paymentMethod,
+					paymentMethodId,
 					blocks: orderInfoBlocks || orderBlocks.get() || [],
 					shippingMethodId: shippingMethod.id,
 					promoCodeId,
@@ -238,7 +238,7 @@ export const actions = {
 					variantId: item.variantId,
 					quantity: item.quantity,
 				})),
-				paymentMethod: PaymentMethodType.Cash,
+				paymentMethodId: undefined,
 				shippingMethodId: store.get().selectedShippingMethodId || undefined,
 				promoCode: (promoCode !== undefined ? promoCode : promoCodeAtom.get()) || undefined,
 				location,

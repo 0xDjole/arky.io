@@ -565,7 +565,7 @@ export const actions = {
     store.setKey("cart", []);
   },
 
-  async checkout(paymentMethod?: string, blocks?: any[], email?: string, phone?: string) {
+  async checkout(paymentMethodId?: string, blocks?: any[], email?: string, phone?: string) {
     const state = store.get();
     if (!state.cart.length) return { success: false, error: "Cart is empty" };
     store.setKey("loading", true);
@@ -581,7 +581,7 @@ export const actions = {
           to: s.to,
           blocks: s.serviceBlocks || [],
         })),
-        paymentMethod,
+        paymentMethodId,
         promoCodeId,
         blocks: blocks || [],
         email: email || undefined,
@@ -595,7 +595,7 @@ export const actions = {
     }
   },
 
-  async fetchQuote(paymentMethod?: string, promoCode?: string) {
+  async fetchQuote(paymentMethodId?: string, promoCode?: string) {
     const state = store.get();
     if (!state.cart.length) return null;
     store.setKey("fetchingQuote", true);
@@ -608,7 +608,7 @@ export const actions = {
           to: s.to,
           providerId: s.providerId,
         })),
-        paymentMethod: paymentMethod || "CASH",
+        paymentMethodId,
         promoCode,
       });
       store.setKey("quote", quote);
