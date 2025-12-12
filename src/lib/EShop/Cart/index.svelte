@@ -19,7 +19,7 @@
 
 	let showCheckoutSection = $state(false);
 	let checkoutFormData = $state({});
-	let selectedPaymentMethod: string = $state('CASH');
+	let selectedPaymentMethodType: string = $state('CASH');
 	let paymentProcessing = $state(false);
 	let paymentError = $state(null);
 	let orderBlocks = $state([]);
@@ -57,7 +57,13 @@
     );
 
     const availableShippingMethods = $derived($quoteAtom?.zone?.shippingMethods || []);
-    const availablePaymentMethods = $derived(($quoteAtom?.zone?.paymentMethods || []).map(pm => pm.type));
+    const availablePaymentMethodObjects = $derived($quoteAtom?.zone?.paymentMethods || []);
+    const availablePaymentMethods = $derived(availablePaymentMethodObjects.map(pm => pm.type));
+
+    const selectedPaymentMethodId = $derived(() => {
+        const selected = availablePaymentMethodObjects.find(pm => pm.type === selectedPaymentMethodType);
+        return selected?.id || null;
+    });
 
     $effect(() => {
         if (availableShippingMethods.length > 0 && selectedShippingMethodId) {
@@ -77,7 +83,7 @@
 		paymentFormValid = isValid;
 	}
 
-	const isCompletelyValid = $derived(formValid && locationComplete && emailValid() && phoneValid() && (selectedPaymentMethod === 'CASH' || paymentFormValid));
+	const isCompletelyValid = $derived(formValid && locationComplete && emailValid() && phoneValid() && (selectedPaymentMethodType === 'CASH' || paymentFormValid));
 
 	async function handlePhoneSendCode(blockId, phone) {
 		store.setKey('phoneNumber', phone);
@@ -155,7 +161,7 @@ async function handleApplyPromoCode(code: string) {
 				showToast('Please enter a valid email address', 'error', 4000);
 			} else if (!phoneValid()) {
 				showToast('Please verify your phone number', 'error', 4000);
-			} else if (selectedPaymentMethod === 'CREDIT_CARD' && !paymentFormValid) {
+			} else if (selectedPaymentMethodType === 'CREDIT_CARD' && !paymentFormValid) {
 				showToast('Please complete payment information before placing order', 'error', 4000);
 			}
 			return;
@@ -165,7 +171,7 @@ async function handleApplyPromoCode(code: string) {
 		paymentError = null;
 
 		try {
-			const checkoutResponse = await actions.checkout(selectedPaymentMethod, locationData, orderBlocks, email || undefined, phone || undefined);
+			const checkoutResponse = await actions.checkout(selectedPaymentMethodId(), locationData, orderBlocks, email || undefined, phone || undefined);
 
 			if (!checkoutResponse.success) {
 				throw new Error(checkoutResponse.error || 'Failed to create order');
@@ -173,14 +179,14 @@ async function handleApplyPromoCode(code: string) {
 
 			const { orderId, clientSecret } = checkoutResponse.data;
 
-			if (selectedPaymentMethod === 'CASH') {
+			if (selectedPaymentMethodType === 'CASH') {
 				showToast('Order placed successfully! Pay on delivery.', 'success', 6000);
 				showCheckoutSection = false;
 				actions.clearCart();
 				return;
 			}
 
-			if (selectedPaymentMethod === 'CREDIT_CARD') {
+			if (selectedPaymentMethodType === 'CREDIT_CARD') {
 				if (!confirmPayment) {
 					throw new Error('Payment system not ready');
 				}
@@ -204,7 +210,7 @@ async function handleApplyPromoCode(code: string) {
 
 			showCheckoutSection = false;
 			checkoutFormData = {};
-			selectedPaymentMethod = 'CASH';
+			selectedPaymentMethodType = 'CASH';
 			actions.clearCart();
 
 		} catch (error) {
@@ -417,8 +423,8 @@ async function handleApplyPromoCode(code: string) {
 							<PaymentForm
 								allowedMethods={availablePaymentMethods}
 								paymentProvider={$paymentConfig?.provider}
-								{selectedPaymentMethod}
-								onPaymentMethodChange={(method) => selectedPaymentMethod = method}
+								selectedPaymentMethod={selectedPaymentMethodType}
+								onPaymentMethodChange={(method) => selectedPaymentMethodType = method}
 								onStripeReady={(confirmFn) => confirmPayment = confirmFn}
 								onValidationChange={handlePaymentValidationChange}
 								error={paymentError}
@@ -446,14 +452,14 @@ async function handleApplyPromoCode(code: string) {
 						<div class="flex justify-center pt-4">
 							<button
 								type="submit"
-								disabled={$store.processingCheckout || paymentProcessing || !isCompletelyValid || (selectedPaymentMethod === 'CREDIT_CARD' && !confirmPayment)}
+								disabled={$store.processingCheckout || paymentProcessing || !isCompletelyValid || (selectedPaymentMethodType === 'CREDIT_CARD' && !confirmPayment)}
 								class="w-full px-6 py-4 text-lg bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
 							>
 								{#if $store.processingCheckout || paymentProcessing}
 									<Icon icon="mdi:loading" class="h-5 w-5 animate-spin" />
 									Processing...
 								{:else}
-									<Icon icon={selectedPaymentMethod === 'CREDIT_CARD' ? 'mdi:credit-card' : 'mdi:cash'} class="h-5 w-5" />
+									<Icon icon={selectedPaymentMethodType === 'CREDIT_CARD' ? 'mdi:credit-card' : 'mdi:cash'} class="h-5 w-5" />
 									Place Order
 								{/if}
 							</button>
