@@ -3,7 +3,7 @@
 	import DynamicForm from '@lib/DynamicForm/index.svelte';
 	import PhoneInput from '@lib/shared/PhoneInput/index.svelte';
 	import { store, actions, initReservationStore, cartParts } from '@lib/core/stores/reservation';
-	import { reservationBlocks, reservationConfigs, paymentMethods, paymentConfig, currency } from '@lib/core/stores/business';
+	import { reservationBlocks, reservationConfigs, paymentMethods as businessPaymentMethods, paymentConfig, currency } from '@lib/core/stores/business';
 	import { onMount } from 'svelte';
 	import { t } from '../../../lib/i18n/index';
 	import { showToast } from '@lib/toast.js';
@@ -13,6 +13,14 @@
 
 	let appliedPromoCode = $state<string | null>(null);
 	let selectedPaymentMethod: string = $state('CASH');
+
+	const availablePaymentMethods = $derived(() => {
+		const fromQuote = $store.availablePaymentMethods || [];
+		if (fromQuote.length > 0) {
+			return fromQuote.map((m: any) => m.type || m.id);
+		}
+		return $businessPaymentMethods || ['CASH'];
+	});
 	let paymentProcessing = $state(false);
 	let paymentError = $state(null);
 	let confirmPayment = null;
@@ -57,7 +65,7 @@
 
 	$effect(() => {
 		if (paymentProcessing) return;
-		const allowedMethods = $paymentMethods || ['CASH'];
+		const allowedMethods = availablePaymentMethods();
 		if (allowedMethods.length > 0 && !allowedMethods.includes(selectedPaymentMethod)) {
 			selectedPaymentMethod = allowedMethods[0];
 		}
@@ -303,9 +311,9 @@ async function handleApplyPromoCode(code: string) {
 			showShipping={false}
 		/>
 
-		{#if ($paymentMethods || []).length > 0}
+		{#if availablePaymentMethods().length > 0}
 			<PaymentForm
-				allowedMethods={$paymentMethods || ['CASH']}
+				allowedMethods={availablePaymentMethods()}
 				paymentProvider={$paymentConfig?.provider}
 				{selectedPaymentMethod}
 				onPaymentMethodChange={(method) => selectedPaymentMethod = method}

@@ -100,6 +100,7 @@ interface ReservationState {
   verificationCode: string;
   dateTimeConfirmed: boolean;
   isMultiDay: boolean;
+  availablePaymentMethods: any[];
 }
 
 function formatTime(ts: number, tz: string): string {
@@ -224,6 +225,7 @@ const createInitialState = (): ReservationState => ({
   verificationCode: "",
   dateTimeConfirmed: false,
   isMultiDay: false,
+  availablePaymentMethods: [],
 });
 
 export const store = map<ReservationState>(createInitialState());
@@ -610,6 +612,9 @@ export const actions = {
         promoCode,
       });
       store.setKey("quote", quote);
+      if (quote?.availablePaymentMethods) {
+        store.setKey("availablePaymentMethods", quote.availablePaymentMethods);
+      }
       return quote;
     } catch (e: any) {
       store.setKey("quoteError", e.message);
