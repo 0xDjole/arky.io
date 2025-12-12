@@ -129,7 +129,7 @@ export const actions = {
 			store.setKey("error", null);
 
 			const quote = quoteAtom.get();
-			const availableShippingMethods = quote?.shippingMethods || [];
+			const availableShippingMethods = quote?.availableShippingMethods || [];
 
 			if (!availableShippingMethods.length) {
 				throw new Error("No shipping methods available. Please enter your address first.");

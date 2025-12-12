@@ -56,9 +56,8 @@
         locationData?.address
     );
 
-    // Get shipping/payment methods from quote response (fetched from backend based on zone)
-    const availableShippingMethods = $derived($quoteAtom?.shippingMethods || []);
-    const availablePaymentMethods = $derived(($quoteAtom?.paymentMethods || []).map(pm => pm.type));
+    const availableShippingMethods = $derived($quoteAtom?.availableShippingMethods || []);
+    const availablePaymentMethods = $derived(($quoteAtom?.availablePaymentMethods || []).map(pm => pm.type));
 
     $effect(() => {
         if (availableShippingMethods.length > 0 && selectedShippingMethodId) {
