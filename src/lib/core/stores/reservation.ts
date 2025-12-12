@@ -612,8 +612,8 @@ export const actions = {
         promoCode,
       });
       store.setKey("quote", quote);
-      if (quote?.availablePaymentMethods) {
-        store.setKey("availablePaymentMethods", quote.availablePaymentMethods);
+      if (quote?.zone?.paymentMethods) {
+        store.setKey("availablePaymentMethods", quote.zone.paymentMethods);
       }
       return quote;
     } catch (e: any) {

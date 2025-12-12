@@ -56,8 +56,8 @@
         locationData?.address
     );
 
-    const availableShippingMethods = $derived($quoteAtom?.availableShippingMethods || []);
-    const availablePaymentMethods = $derived(($quoteAtom?.availablePaymentMethods || []).map(pm => pm.type));
+    const availableShippingMethods = $derived($quoteAtom?.zone?.shippingMethods || []);
+    const availablePaymentMethods = $derived(($quoteAtom?.zone?.paymentMethods || []).map(pm => pm.type));
 
     $effect(() => {
         if (availableShippingMethods.length > 0 && selectedShippingMethodId) {

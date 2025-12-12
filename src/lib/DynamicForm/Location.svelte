@@ -2,8 +2,15 @@
 	import Icon from '@iconify/svelte';
 	import { onMount } from 'svelte';
 	import { arky } from '@lib/index.ts';
-	import { selectedMarket, getZonesForMarket } from '@lib/core/stores/business';
+	import { selectedMarket, getOrderZonesForMarket, getReservationZonesForMarket } from '@lib/core/stores/business';
 	import type { Location } from '@lib/core/types';
+
+	let {
+		value = {} as Location,
+		onUpdate = (location: Location) => {},
+		required = false,
+		scope = "ORDER" as "ORDER" | "RESERVATION"
+	} = $props();
 
 	let countriesData = $state<Array<{ code: string; name: string; states: Array<{ code: string; name: string }> }>>([]);
 	let loadingCountries = $state(true);
@@ -19,6 +26,10 @@
 		}
 	});
 
+	function getZonesForScope(marketId: string) {
+		return scope === "RESERVATION" ? getReservationZonesForMarket(marketId) : getOrderZonesForMarket(marketId);
+	}
+
 	const ALL_COUNTRIES = $derived(
 		countriesData.map(c => ({ iso: c.code, name: c.name }))
 			.sort((a, b) => a.name.localeCompare(b.name))
@@ -28,10 +39,10 @@
 		const market = $selectedMarket;
 		if (!market || countriesData.length === 0) return [];
 
-		const marketZones = getZonesForMarket(market.id);
+		const marketZones = getZonesForScope(market.id);
 		if (marketZones.length === 0) return [];
 
-		const hasGlobalZone = marketZones.some(z => z.countries.length === 0);
+		const hasGlobalZone = marketZones.some(z => z.countries.length === 0 || z.countries.includes("*"));
 		if (hasGlobalZone) {
 			return ALL_COUNTRIES;
 		}
@@ -47,19 +58,13 @@
 			.sort((a, b) => a.name.localeCompare(b.name));
 	});
 
-	let {
-		value = {} as Location,
-		onUpdate = (location: Location) => {},
-		required = false
-	} = $props();
-
 	function getAvailableStates(selectedCountry: string): Array<{ code: string; name: string }> {
 		const market = $selectedMarket;
 		if (!market || !selectedCountry) return [];
 
-		const marketZones = getZonesForMarket(market.id);
+		const marketZones = getZonesForScope(market.id);
 		const matchingZones = marketZones.filter(z =>
-			z.countries.length === 0 || z.countries.includes(selectedCountry)
+			z.countries.length === 0 || z.countries.includes("*") || z.countries.includes(selectedCountry)
 		);
 
 		const hasZoneWithAllStates = matchingZones.some(z => !z.states || z.states.length === 0);

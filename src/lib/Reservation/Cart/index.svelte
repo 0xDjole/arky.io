@@ -12,14 +12,24 @@
 	import PromoCode from '@lib/shared/PromoCode/index.svelte';
 
 	let appliedPromoCode = $state<string | null>(null);
-	let selectedPaymentMethod: string = $state('CASH');
+	let selectedPaymentMethodType: string = $state('CASH');
 
-	const availablePaymentMethods = $derived(() => {
+	const availablePaymentMethodObjects = $derived(() => {
 		const fromQuote = $store.availablePaymentMethods || [];
 		if (fromQuote.length > 0) {
-			return fromQuote.map((m: any) => m.type || m.id);
+			return fromQuote;
 		}
-		return $businessPaymentMethods || ['CASH'];
+		return [];
+	});
+
+	const availablePaymentMethods = $derived(() => {
+		return availablePaymentMethodObjects().map((m: any) => m.type);
+	});
+
+	const selectedPaymentMethodId = $derived(() => {
+		const methods = availablePaymentMethodObjects();
+		const selected = methods.find((m: any) => m.type === selectedPaymentMethodType);
+		return selected?.id || null;
 	});
 	let paymentProcessing = $state(false);
 	let paymentError = $state(null);
@@ -44,7 +54,7 @@
 		return phoneVerified;
 	});
 
-	const isCompletelyValid = $derived(formValid && emailValid() && phoneValid() && (selectedPaymentMethod === 'CASH' || selectedPaymentMethod === 'FREE' || paymentFormValid));
+	const isCompletelyValid = $derived(formValid && emailValid() && phoneValid() && (selectedPaymentMethodType === 'CASH' || selectedPaymentMethodType === 'FREE' || paymentFormValid));
 
 	onMount(() => {
 		initReservationStore();
@@ -66,22 +76,21 @@
 	$effect(() => {
 		if (paymentProcessing) return;
 		const allowedMethods = availablePaymentMethods();
-		if (allowedMethods.length > 0 && !allowedMethods.includes(selectedPaymentMethod)) {
-			selectedPaymentMethod = allowedMethods[0];
+		if (allowedMethods.length > 0 && !allowedMethods.includes(selectedPaymentMethodType)) {
+			selectedPaymentMethodType = allowedMethods[0];
 		}
 	});
 
-	// Manually fetch quote when needed
 	function refreshQuote() {
 		if ($store.cart && $store.cart.length > 0) {
-			actions.fetchQuote(selectedPaymentMethod, appliedPromoCode);
+			actions.fetchQuote(selectedPaymentMethodId(), appliedPromoCode);
 		}
 	}
 
 async function handleApplyPromoCode(code: string) {
     const candidate = (code || '').trim();
     if (!candidate) return;
-    await actions.fetchQuote(selectedPaymentMethod, candidate);
+    await actions.fetchQuote(selectedPaymentMethodId(), candidate);
     if (!$store.quoteError) {
         appliedPromoCode = candidate;
         showToast(`Promo code "${candidate}" applied`, 'success', 3000);
@@ -131,7 +140,7 @@ async function handleApplyPromoCode(code: string) {
 				showToast('Please enter a valid email address', 'error', 4000);
 			} else if (!phoneValid()) {
 				showToast('Please verify your phone number', 'error', 4000);
-			} else if (selectedPaymentMethod === 'CREDIT_CARD' && !paymentFormValid) {
+			} else if (selectedPaymentMethodType === 'CREDIT_CARD' && !paymentFormValid) {
 				showToast('Please complete payment information before submitting', 'error', 4000);
 			}
 			return;
@@ -141,7 +150,7 @@ async function handleApplyPromoCode(code: string) {
 		paymentError = null;
 
 		try {
-			const checkoutResponse = await actions.checkout(selectedPaymentMethod, localReservationBlocks, email || undefined, phone || undefined);
+			const checkoutResponse = await actions.checkout(selectedPaymentMethodId(), localReservationBlocks, email || undefined, phone || undefined);
 
 			if (!checkoutResponse.success) {
 				throw new Error(checkoutResponse.error || 'Failed to create reservation');
@@ -149,9 +158,8 @@ async function handleApplyPromoCode(code: string) {
 
 			const { reservationId, clientSecret } = checkoutResponse.data;
 
-			// For cash payments or free inquiries, we're done
-			if (selectedPaymentMethod === 'CASH' || selectedPaymentMethod === 'FREE') {
-				const message = selectedPaymentMethod === 'FREE' ? 'Inquiry submitted successfully!' : 'Reservation created successfully!';
+			if (selectedPaymentMethodType === 'CASH' || selectedPaymentMethodType === 'FREE') {
+				const message = selectedPaymentMethodType === 'FREE' ? 'Inquiry submitted successfully!' : 'Reservation created successfully!';
 				showToast(message, 'success', 6000);
 
 				// Clear cart and promo code
@@ -161,8 +169,7 @@ async function handleApplyPromoCode(code: string) {
 				return;
 			}
 
-			// For credit card, confirm payment
-			if (selectedPaymentMethod === 'CREDIT_CARD') {
+			if (selectedPaymentMethodType === 'CREDIT_CARD') {
 				if (!confirmPayment) {
 					throw new Error('Payment system not ready');
 				}
@@ -315,8 +322,8 @@ async function handleApplyPromoCode(code: string) {
 			<PaymentForm
 				allowedMethods={availablePaymentMethods()}
 				paymentProvider={$paymentConfig?.provider}
-				{selectedPaymentMethod}
-				onPaymentMethodChange={(method) => selectedPaymentMethod = method}
+				selectedPaymentMethod={selectedPaymentMethodType}
+				onPaymentMethodChange={(method) => selectedPaymentMethodType = method}
 				onStripeReady={(confirmFn) => confirmPayment = confirmFn}
 				onValidationChange={handlePaymentValidationChange}
 				error={paymentError}
@@ -328,13 +335,13 @@ async function handleApplyPromoCode(code: string) {
 
 		<button
 			class="bg-primary-600 hover:bg-primary-500 mt-4 flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3 text-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-			disabled={$store?.loading || paymentProcessing || !isCompletelyValid || (selectedPaymentMethod === 'CREDIT_CARD' && !confirmPayment)}
+			disabled={$store?.loading || paymentProcessing || !isCompletelyValid || (selectedPaymentMethodType === 'CREDIT_CARD' && !confirmPayment)}
 			onclick={handleCheckout}>
 			{#if !$store?.loading && !paymentProcessing}
-				<Icon icon={selectedPaymentMethod === 'CREDIT_CARD' ? 'mdi:credit-card' : (selectedPaymentMethod === 'FREE' ? 'mdi:send' : 'mdi:check-circle')} class="h-5 w-5" />
-				{#if selectedPaymentMethod === 'FREE'}
+				<Icon icon={selectedPaymentMethodType === 'CREDIT_CARD' ? 'mdi:credit-card' : (selectedPaymentMethodType === 'FREE' ? 'mdi:send' : 'mdi:check-circle')} class="h-5 w-5" />
+				{#if selectedPaymentMethodType === 'FREE'}
 					Submit Inquiry
-				{:else if selectedPaymentMethod === 'CREDIT_CARD'}
+				{:else if selectedPaymentMethodType === 'CREDIT_CARD'}
 					Pay & Confirm
 				{:else}
 					{t('reservation.confirm')}

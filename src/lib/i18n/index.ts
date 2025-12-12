@@ -108,6 +108,17 @@ export const textTranslations = {
 			processing: "Processing...",
 			verifying: "Verifying...",
 		},
+		// Payment & Shipping Methods
+		paymentMethods: {
+			cash: "Cash",
+			credit_card: "Credit Card",
+			free: "Free",
+		},
+		shippingMethods: {
+			standard: "Standard Shipping",
+			express: "Express Shipping",
+			pickup: "Store Pickup",
+		},
 	},
 	fr: {
 		hero_description: `…`,
@@ -216,6 +227,17 @@ export const textTranslations = {
 			enterPhone: "Entrez votre numéro de téléphone",
 			processing: "Traitement en cours...",
 			verifying: "Vérification en cours...",
+		},
+		// Payment & Shipping Methods
+		paymentMethods: {
+			cash: "Espèces",
+			credit_card: "Carte de Crédit",
+			free: "Gratuit",
+		},
+		shippingMethods: {
+			standard: "Livraison Standard",
+			express: "Livraison Express",
+			pickup: "Retrait en Magasin",
 		},
 	},
 } as const;

@@ -34,9 +34,17 @@ export const zones = computed(businessStore, (state) => {
 	return state.data.configs.zones;
 });
 
-export const getZonesForMarket = (marketId: string): Zone[] => {
+export const getZonesForMarket = (marketId: string, scope?: string): Zone[] => {
 	const allZones = zones.get();
-	return allZones.filter(z => z.marketId === marketId);
+	return allZones.filter(z => z.marketId === marketId && (!scope || z.scope === scope));
+};
+
+export const getOrderZonesForMarket = (marketId: string): Zone[] => {
+	return getZonesForMarket(marketId, "ORDER");
+};
+
+export const getReservationZonesForMarket = (marketId: string): Zone[] => {
+	return getZonesForMarket(marketId, "RESERVATION");
 };
 
 export const paymentMethods = computed(selectedMarket, (market) => {
