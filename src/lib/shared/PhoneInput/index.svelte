@@ -89,15 +89,16 @@
 
 		onSendCode(blockId, fullPhoneNumber.trim()).then(result => {
 			phoneState.isLoading = false;
-			if (result) {
+			const success = result === true || result?.success === true;
+			if (success) {
 				phoneState.success = "Verification code sent successfully!";
 				phoneState.error = null;
 			} else {
 				phoneState.error = "Failed to send verification code";
 			}
-		}).catch(error => {
+		}).catch(() => {
 			phoneState.isLoading = false;
-			phoneState.error = error.message || "Failed to send verification code";
+			phoneState.error = "Failed to send verification code";
 		});
 	}
 
@@ -113,15 +114,16 @@
 
 		onVerifyCode(blockId, phoneState.verificationCode).then(result => {
 			phoneState.isVerifying = false;
-			if (result) {
+			const success = result === true || result?.success === true;
+			if (success) {
 				phoneState.isVerified = true;
 				phoneState.verifyError = null;
 			} else {
 				phoneState.verifyError = "Invalid verification code";
 			}
-		}).catch(error => {
+		}).catch(() => {
 			phoneState.isVerifying = false;
-			phoneState.verifyError = error.message || "Invalid verification code";
+			phoneState.verifyError = "Invalid verification code";
 		});
 	}
 

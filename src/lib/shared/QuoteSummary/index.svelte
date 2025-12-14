@@ -40,7 +40,7 @@
 	{:else if quoteError}
 		<!-- Error State -->
 		<div class="text-sm text-destructive p-4 bg-destructive/10 rounded">
-			{quoteError}
+			Something went wrong. Please try again.
 		</div>
 	{:else if quote}
 		<!-- Full Price Breakdown from Quote -->

@@ -674,10 +674,10 @@ export const actions = {
 
   async addPhoneNumber() {
     const state = store.get();
-    const phone = state.phoneNumber;
-    if (!phone) return { success: false, error: "No phone number" };
+    const phoneNumber = state.phoneNumber;
+    if (!phoneNumber) return { success: false, error: "No phone number" };
     try {
-      await arky.user.sendPhoneCode({ phone });
+      await arky.user.addPhoneNumber({ phoneNumber });
       return { success: true };
     } catch (e: any) {
       return { success: false, error: e.message };
@@ -686,10 +686,11 @@ export const actions = {
 
   async phoneNumberConfirm() {
     const state = store.get();
+    const phoneNumber = state.phoneNumber;
     const code = state.verificationCode;
     if (!code) return { success: false, error: "No verification code" };
     try {
-      await arky.user.verifyPhoneCode({ code });
+      await arky.user.phoneNumberConfirm({ phoneNumber, code });
       return { success: true };
     } catch (e: any) {
       return { success: false, error: e.message };
