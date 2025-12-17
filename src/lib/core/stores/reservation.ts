@@ -408,14 +408,13 @@ export const actions = {
     store.setKey("loading", true);
 
     try {
-      const { currentMonth, service } = state;
-      const year = currentMonth.getFullYear();
-      const month = currentMonth.getMonth();
-      const from = Math.floor(new Date(year, month, 1).getTime() / 1000);
-      const to = Math.floor(new Date(year, month + 1, 0, 23, 59, 59).getTime() / 1000);
-
-      const providers = await arky.reservation.getServiceProviders({ serviceId: service.id, from, to });
-      store.setKey("providers", providers || []);
+      const providers: ProviderWithTimeline[] = (state.service.providers || []).map((sp: any) => ({
+        id: sp.provider?.id || sp.providerId,
+        workingTime: sp.workingTime,
+        timeline: sp.provider?.timeline || [],
+        concurrentLimit: sp.provider?.concurrentLimit || 1,
+      }));
+      store.setKey("providers", providers);
       store.setKey("calendar", buildCalendar());
     } finally {
       store.setKey("loading", false);
@@ -626,11 +625,10 @@ export const actions = {
     }
   },
 
-  async getProvidersList() {
+  getProvidersList() {
     const state = store.get();
     if (!state.service) return [];
-    const response = await arky.reservation.getProviders({ serviceId: state.service.id, limit: 100 });
-    return response?.items || [];
+    return (state.service.providers || []).map((sp: any) => sp.provider).filter(Boolean);
   },
 
   prevStep() {
