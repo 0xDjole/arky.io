@@ -120,7 +120,7 @@
 				{#if thumbUrl}
 					<img
 						src={thumbUrl}
-						alt={service.name[locale] || service.name.en}
+						alt={service.name}
 						
 						class="w-full h-48 object-cover"
 					/>
@@ -132,7 +132,7 @@
 
 				<div class="p-6">
 					<h3 class="text-lg font-semibold text-primary mb-2">
-						{service.name[locale] || service.name.en}
+						{service.name}
 					</h3>
 					<p class="text-muted text-sm mb-3">
 						{service.description?.[locale] || service.description?.en || ""}

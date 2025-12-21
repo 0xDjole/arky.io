@@ -154,10 +154,46 @@
 			{/if}
 		{:else if block.type === 'BLOCK'}
             <div style={getStyleString(block)}>
-				{#each block.value as nestedBlock}
+				{#each block.value || [] as nestedBlock}
 					<svelte:self blocks={[nestedBlock]} isNested={true} {locale} />
 				{/each}
 			</div>
+		{:else if block.type === 'NUMBER' || block.type === 'NUMBER_FILTER'}
+			{@const label = block.properties?.label?.[locale] || block.properties?.label?.en || block.key}
+			{@const values = block.value || []}
+			{#if values.length > 0}
+				<div class="flex items-center gap-2 text-secondary">
+					<span class="font-medium">{label}:</span>
+					<span>{values.join(', ')}</span>
+				</div>
+			{/if}
+		{:else if block.type === 'GEO_LOCATION'}
+			{@const label = block.properties?.label?.[locale] || block.properties?.label?.en || block.key}
+			{@const locations = block.value || []}
+			{#if locations.length > 0}
+				<div class="flex items-center gap-2 text-secondary">
+					<span class="font-medium">{label}:</span>
+					<span>{locations.map(loc => loc.city || loc.address || '').filter(Boolean).join(', ')}</span>
+				</div>
+			{/if}
+		{:else if block.type === 'BOOLEAN'}
+			{@const label = block.properties?.label?.[locale] || block.properties?.label?.en || block.key}
+			{@const value = block.value?.[0]}
+			{#if value !== undefined}
+				<div class="flex items-center gap-2 text-secondary">
+					<span class="font-medium">{label}:</span>
+					<span>{value ? '✓' : '✗'}</span>
+				</div>
+			{/if}
+		{:else if block.type === 'TEXT_FILTER'}
+			{@const label = block.properties?.label?.[locale] || block.properties?.label?.en || block.key}
+			{@const values = block.value || []}
+			{#if values.length > 0}
+				<div class="flex items-center gap-2 text-secondary">
+					<span class="font-medium">{label}:</span>
+					<span>{values.join(', ')}</span>
+				</div>
+			{/if}
 		{/if}
 	{/each}
 {/if}

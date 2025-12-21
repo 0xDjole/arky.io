@@ -5,8 +5,8 @@ import Switch from "@components/Switch";
 import { arky } from "@lib/index";
 import PricingHighlight from "@components/FeatureFlag/PricingHighlight.svelte";
 
-const websiteCollection = await arky.cms.getCollection({ id: "website" });
-const pricingData = websiteCollection.getBlockValues("pricing_plans");
+const websiteNode = await arky.cms.getNode({ id: "website" });
+const pricingData = websiteNode.getBlockValues("pricing_plans");
 ---
 
 <section id="pricing-4" class="my-24 md:my-36">

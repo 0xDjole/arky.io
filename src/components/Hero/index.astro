@@ -4,8 +4,8 @@ import { arky } from "@lib/index";
 import Button from "@components/Button/Button.astro";
 import HeroCTA from "@components/FeatureFlag/HeroCTA.svelte";
 
-const websiteCollection = await arky.cms.getCollection({ id: "website" });
-const info = websiteCollection.getBlock("info");
+const websiteNode = await arky.cms.getNode({ id: "website" });
+const info = websiteNode.getBlock("info");
 
 const heroTitle = info.heroTitle;
 const heroSubtitle = info.heroSubtitle;

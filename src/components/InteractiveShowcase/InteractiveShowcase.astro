@@ -2,8 +2,8 @@
 import { arky } from "@lib/index";
 import { Icon } from "astro-icon/components";
 
-const websiteCollection = await arky.cms.getCollection({ id: "website" });
-const info = websiteCollection.getBlock("info");
+const websiteNode = await arky.cms.getNode({ id: "website" });
+const info = websiteNode.getBlock("info");
 const aboutTitle = info.aboutTitle;
 const aboutContent = info.aboutContent;
 const aboutImage = info.aboutImage;

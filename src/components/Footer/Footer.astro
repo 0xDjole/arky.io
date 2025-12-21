@@ -1,8 +1,8 @@
 ---
 import { arky } from "@lib/index";
 
-const websiteCollection = await arky.cms.getCollection({ id: "website" });
-const siteData = websiteCollection.getBlock("info");
+const websiteNode = await arky.cms.getNode({ id: "website" });
+const siteData = websiteNode.getBlock("info");
 ---
 
 <footer class="w-full py-8 mt-16 border-t border-gray-200 dark:border-gray-800">

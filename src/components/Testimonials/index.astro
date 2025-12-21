@@ -8,8 +8,8 @@ import TestimonialCard from "./TestimonialCard.astro";
 
 import { arky } from "@lib/index";
 
-const websiteCollection = await arky.cms.getCollection({ id: "website" });
-const testimonialData = websiteCollection.getBlockValues("testimonials");
+const websiteNode = await arky.cms.getNode({ id: "website" });
+const testimonialData = websiteNode.getBlockValues("testimonials");
 ---
 
 <section id="testimonial" class="testimonial-pin-section relative h-screen overflow-hidden">

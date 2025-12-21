@@ -13,8 +13,8 @@ import {
 
 import { arky } from "@lib/index";
 
-const websiteCollection = await arky.cms.getCollection({ id: "website" });
-const faqData = websiteCollection.getBlockValues("faq");
+const websiteNode = await arky.cms.getNode({ id: "website" });
+const faqData = websiteNode.getBlockValues("faq");
 ---
 
 <section id="faq" class="site-container my-24 md:my-36">

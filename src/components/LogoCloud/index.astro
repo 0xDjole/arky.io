@@ -1,8 +1,8 @@
 ---
 import { arky } from "@lib/index";
 
-const websiteCollection = await arky.cms.getCollection({ id: "website" });
-const logos = websiteCollection.getBlockValues("logos");
+const websiteNode = await arky.cms.getNode({ id: "website" });
+const logos = websiteNode.getBlockValues("logos");
 
 const logosWithSvg = await Promise.all(
 	logos.map(async (logo) => {

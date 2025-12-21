@@ -15,7 +15,7 @@
   async function loadSchema() {
     isLoading = true;
     try {
-      collection = await arky.cms.getCollection({ id: 'contact_form' });
+      collection = await arky.cms.getNode({ id: 'contact_form' });
 
       collection.blocks.forEach((f) => {
         form[f.key] = "";
@@ -31,9 +31,9 @@
     isSubmitting = true;
 
     try {
-      await arky.cms.createCollectionEntry({
-        collectionId: collection.id,
-        name: { en: 'Contact Form Submission' },
+      await arky.cms.createNode({
+        parentId: collection.id,
+        name: 'Contact Form Submission',
         type: 'DATA',
         blocks: collection.blocks.map((f) => ({
           ...f,

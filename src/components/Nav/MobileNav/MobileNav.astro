@@ -7,8 +7,8 @@ import SiteLogo from "@components/SiteLogo/SiteLogo.astro";
 import { arky } from "@lib/index";
 import { locales } from "@lib/i18n";
 
-const websiteCollection = await arky.cms.getCollection({ id: "website" });
-const navData = websiteCollection.getBlockValues("navigation_items");
+const websiteNode = await arky.cms.getNode({ id: "website" });
+const navData = websiteNode.getBlockValues("navigation_items");
 ---
 
 <mobile-nav-menu>

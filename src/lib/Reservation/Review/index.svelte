@@ -38,7 +38,7 @@
 				<Icon icon="mdi:store" class="h-5 w-5 text-secondary mt-1"/>
 				<div>
 					<p class="font-medium text-primary">
-						{$store.service.name.en ?? Object.values($store.service.name)[0]}
+						{$store.service.name}
 					</p>
 					{#if $store.service.priceOption}
 						<p class="text-secondary mt-1 text-sm">{actions.getServicePrice()}</p>
@@ -53,7 +53,7 @@
 			<div class="border-secondary bg-secondary rounded-lg border p-4 flex gap-3">
 				<Icon icon="mdi:account" class="h-5 w-5 text-secondary mt-1"/>
 				<div>
-					<p class="font-medium text-primary">{$store.selectedProvider.name?.[locale] || $store.selectedProvider.name?.en || $store.selectedProvider.name}</p>
+					<p class="font-medium text-primary">{$store.selectedProvider.name}</p>
 				</div>
 			</div>
 		</div>

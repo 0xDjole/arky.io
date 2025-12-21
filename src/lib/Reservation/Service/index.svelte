@@ -43,7 +43,7 @@
 	{#if thumbUrl}
 		<div class="relative h-[500px] w-full overflow-hidden rounded-t-2xl shadow-lg">
 			<img src={thumbUrl}
-			     alt={service.name[locale] ?? service.name.en}
+			     alt={service.name}
 			     class="h-full w-full object-cover transition-transform duration-700 hover:scale-105" />
 			<div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"/>
 		</div>
@@ -59,7 +59,7 @@
 				</span>
 
 				<h1 class="mt-2 text-4xl font-bold leading-tight md:text-5xl">
-					{service.name[locale] ?? service.name.en}
+					{service.name}
 				</h1>
 			</div>
 
