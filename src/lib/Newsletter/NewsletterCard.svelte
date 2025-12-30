@@ -1,9 +1,16 @@
 <script lang="ts">
 	import { arky } from '@lib/index';
-	
+
 	interface StatusEvent {
 		status: 'ACTIVE' | 'INACTIVE' | 'DRAFT' | 'SUSPENDED';
-		created_at: number;
+		createdAt: number;
+	}
+
+	interface SubscriptionPlan {
+		id: string;
+		name: string;
+		price?: number;
+		marketId?: string;
 	}
 
 	interface Newsletter {
@@ -11,11 +18,10 @@
 		businessId: string;
 		name: string;
 		description: string;
-		newsletterType: 'FREE' | 'PAID';
+		plans: SubscriptionPlan[];
 		statuses: StatusEvent[];
-		plans: Array<{ id: string; name: string; amount: number; currency: string; interval: string }>;
-		created_at: number;
-		updated_at: number;
+		createdAt: number;
+		updatedAt: number;
 	}
 
 	interface Props {
@@ -28,16 +34,19 @@
 	let error = $state<string | null>(null);
 	let email = $state('');
 
-	// Helper to get price (plans are not market-specific anymore)
+	// Determine if newsletter is free or paid based on plans
+	const isPaid = $derived(newsletter.plans?.some(p => p.price && p.price > 0) || false);
+	const newsletterType = $derived(isPaid ? 'PAID' : 'FREE');
+
+	// Get price from first plan with a price
 	const getPrice = () => {
-		return newsletter.plans?.[0]?.amount || 0;
+		return newsletter.plans?.find(p => p.price && p.price > 0)?.price || 0;
 	};
 
-	const formatPlanPrice = (plan: any) => {
-		if (!plan) return '';
-		const amountMajor = plan.amount / 100;
-		const symbol = plan.currency === 'usd' ? '$' : plan.currency;
-		return `${symbol}${amountMajor}`;
+	const formatPlanPrice = (plan: SubscriptionPlan | undefined) => {
+		if (!plan?.price) return '';
+		const amountMajor = plan.price / 100;
+		return `$${amountMajor}`;
 	};
 
 	const handleSubscribe = async () => {
@@ -49,59 +58,63 @@
 		subscribing = true;
 		error = null;
 
-	if (newsletter.newsletterType === 'FREE') {
-		try {
-			const { arky } = await import('@lib/index');
-			await arky.user.subscribe({
-				identifier: email,
-				target: `collection:${newsletter.id}`,
-				planId: newsletter.plans[0].id,
-				successUrl: window.location.origin + '/newsletters?subscribed=true',
-				cancelUrl: window.location.origin + '/newsletters',
-			});
+		if (!isPaid) {
+			// Free newsletter subscription
+			try {
+				await arky.user.subscribe({
+					identifier: email,
+					target: `newsletter:${newsletter.id}`,
+					planId: newsletter.plans[0]?.id,
+					successUrl: window.location.origin + '/newsletters?subscribed=true',
+					cancelUrl: window.location.origin + '/newsletters',
+				});
 
-			alert('Successfully subscribed to the newsletter!');
-			email = '';
-		} catch (err) {
-			console.error('Subscription error:', err);
-			error = err instanceof Error ? err.message : 'Failed to subscribe';
-		} finally {
-			subscribing = false;
+				alert('Successfully subscribed to the newsletter!');
+				email = '';
+			} catch (err) {
+				console.error('Subscription error:', err);
+				error = err instanceof Error ? err.message : 'Failed to subscribe';
+			} finally {
+				subscribing = false;
+			}
+			return;
 		}
-		return;
-	}
 
 		// Handle paid newsletter subscription with Stripe
 		const price = getPrice();
 		if (!price || price <= 0) {
 			error = 'This newsletter is not properly configured for subscriptions';
+			subscribing = false;
 			return;
 		}
 
-	try {
-		const { arky } = await import('@lib/index');
-		const response = await arky.user.subscribe({
-			identifier: email,
-			target: `collection:${newsletter.id}`,
-			planId: newsletter.plans[0].id,
-			successUrl: window.location.origin + '/newsletters?subscribed=true',
-			cancelUrl: window.location.origin + '/newsletters',
-		});
+		try {
+			const paidPlan = newsletter.plans?.find(p => p.price && p.price > 0);
+			const response = await arky.user.subscribe({
+				identifier: email,
+				target: `newsletter:${newsletter.id}`,
+				planId: paidPlan?.id,
+				successUrl: window.location.origin + '/newsletters?subscribed=true',
+				cancelUrl: window.location.origin + '/newsletters',
+			});
 
-		const { checkoutUrl } = response;
+			const { checkoutUrl } = response;
 
-		if (!checkoutUrl) {
-			throw new Error('No checkout URL received from server');
+			if (!checkoutUrl) {
+				throw new Error('No checkout URL received from server');
+			}
+
+			window.location.href = checkoutUrl;
+		} catch (err) {
+			console.error('Subscription error:', err);
+			error = err instanceof Error ? err.message : 'Failed to start subscription';
+		} finally {
+			subscribing = false;
 		}
-
-		window.location.href = checkoutUrl;
-	} catch (err) {
-		console.error('Subscription error:', err);
-		error = err instanceof Error ? err.message : 'Failed to start subscription';
-	} finally {
-		subscribing = false;
-	}
 	};
+
+	const currentStatus = $derived(newsletter.statuses?.[0]?.status || 'INACTIVE');
+	const paidPlan = $derived(newsletter.plans?.find(p => p.price && p.price > 0));
 </script>
 
 <div class="bg-card border border-border rounded-lg p-6 hover:shadow-lg transition-shadow">
@@ -117,23 +130,23 @@
 		<!-- Newsletter Type & Price -->
 		<div class="flex items-center justify-between">
 			<div class="flex items-center gap-2">
-				<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {newsletter.newsletterType === 'FREE' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'}">
-					{newsletter.newsletterType}
+				<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {newsletterType === 'FREE' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'}">
+					{newsletterType}
 				</span>
-				{#if newsletter.newsletterType === 'PAID' && newsletter.plans?.[0]}
+				{#if isPaid && paidPlan}
 					<span class="text-sm font-medium">
-						{formatPlanPrice(newsletter.plans[0])}/{newsletter.plans[0].interval}
+						{formatPlanPrice(paidPlan)}/month
 					</span>
 				{/if}
 			</div>
 
 			<div class="text-xs text-muted-foreground">
-				Status: <span class="capitalize">{newsletter.statuses?.[0]?.status.toLowerCase() || 'inactive'}</span>
+				Status: <span class="capitalize">{currentStatus.toLowerCase()}</span>
 			</div>
 		</div>
 
 		<!-- Subscription Button -->
-		{#if newsletter.statuses?.[0]?.status === 'ACTIVE'}
+		{#if currentStatus === 'ACTIVE'}
 			<div class="space-y-2">
 				<input
 					type="email"
@@ -142,7 +155,7 @@
 					class="w-full px-3 py-2 border border-border rounded-md text-foreground bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
 					required
 				/>
-				
+
 				<button
 					onclick={handleSubscribe}
 					disabled={subscribing || !email}
@@ -155,8 +168,8 @@
 						</span>
 					{:else}
 						Subscribe
-						{#if newsletter.newsletterType === 'PAID' && newsletter.plans?.[0]}
-							for {formatPlanPrice(newsletter.plans[0])}/{newsletter.plans[0].interval}
+						{#if isPaid && paidPlan}
+							for {formatPlanPrice(paidPlan)}/month
 						{/if}
 					{/if}
 				</button>
@@ -168,7 +181,7 @@
 		{:else}
 			<div class="text-center">
 				<p class="text-muted-foreground text-sm">
-					This newsletter is currently {newsletter.statuses?.[0]?.status.toLowerCase() || 'inactive'}
+					This newsletter is currently {currentStatus.toLowerCase()}
 				</p>
 			</div>
 		{/if}
