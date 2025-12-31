@@ -124,7 +124,7 @@
 					{#if thumbUrl}
 						<img
 							src={thumbUrl}
-							alt={getLocalizedText(product.name)}
+							alt={product.key}
 
 							class="w-full h-48 object-cover"
 						/>
@@ -136,7 +136,7 @@
 
 					<div class="p-6">
 						<h3 class="text-lg font-semibold text-primary mb-2">
-							{getLocalizedText(product.name)}
+							{product.key}
 						</h3>
 						{#if product.description}
 							<p class="text-muted text-sm mb-3">

@@ -69,7 +69,7 @@
 				return {
 					url: original,
 					thumbnail: thumbnail || original,
-					alt: getLocalizedText(product.name)
+					alt: product.key
 				};
 			}
 			return null;
@@ -164,7 +164,7 @@
 					<!-- Product Details -->
 					<div class="space-y-6">
 						<div>
-							<h1 class="text-3xl font-bold text-foreground mb-2">{getLocalizedText(product.name)}</h1>
+							<h1 class="text-3xl font-bold text-foreground mb-2">{product.key}</h1>
 							<div class="flex items-center gap-2 mb-4">
 								<span class="text-sm text-muted-foreground bg-muted px-2 py-1 rounded">
 									{product.productType}
